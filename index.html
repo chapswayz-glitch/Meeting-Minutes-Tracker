@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>AEC Upskills — Meeting Minutes Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:14px}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e3;padding:0 24px;display:flex;align-items:center;gap:12px;height:54px;position:sticky;top:0;z-index:10}
+.topbar-logo{width:32px;height:32px;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.topbar-title{font-weight:600;font-size:15px}
+.topbar-sub{font-size:12px;color:#aaa}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.save-badge{font-size:11px;color:#3b6d11;background:#eaf3de;padding:3px 10px;border-radius:20px;display:none}
+.main{max-width:1140px;margin:0 auto;padding:24px 16px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid #e5e5e3;margin-bottom:20px;overflow-x:auto}
+.tab{padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;border-radius:4px 4px 0 0}
+.tab:hover{color:#1a1a1a;background:#f5f5f3}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a}
+.panel{display:none}.panel.active{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-val{font-size:26px;font-weight:600;color:#1a1a1a}
+.stat-sub{font-size:11px;color:#aaa;margin-top:2px}
+.card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:16px 20px;margin-bottom:12px}
+.section-label{font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+input,select,textarea{font-size:13px;font-family:inherit;background:#fff;color:#1a1a1a;border:1px solid #d5d5d3;border-radius:8px;padding:7px 11px;outline:none;transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{border-color:#888;box-shadow:0 0 0 3px rgba(0,0,0,0.05)}
+input{height:36px}select{height:36px}
+textarea{width:100%;resize:vertical;min-height:90px}
+button{font-size:13px;font-family:inherit;padding:8px 16px;border:1px solid #d5d5d3;border-radius:8px;cursor:pointer;background:#fff;color:#1a1a1a;font-weight:500;transition:all 0.1s}
+button:hover{background:#f5f5f3}
+button:active{transform:scale(0.98)}
+button.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+button.primary:hover{background:#333}
+button.danger{color:#c0392b;border-color:#f0c0b8}
+button.danger:hover{background:#fff5f3}
+button.sm{font-size:11px;padding:3px 9px}
+table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e5e5e3}
+thead th{text-align:left;padding:10px 12px;font-size:12px;font-weight:600;color:#888;background:#fafaf8;border-bottom:1px solid #e5e5e3}
+tbody tr{border-bottom:1px solid #f0f0ee;transition:background 0.1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#fafaf8}
+td{padding:10px 12px;vertical-align:middle}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.b-completed{background:#eaf3de;color:#3b6d11}
+.b-ongoing{background:#e6f1fb;color:#0c447c}
+.b-pending{background:#faeeda;color:#633806}
+.b-overdue{background:#fcebeb;color:#a32d2d}
+.dept-pill{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.d-sales{background:#eeedfe;color:#3c3489}
+.d-marketing{background:#e1f5ee;color:#085041}
+.d-accounts{background:#faeeda;color:#633806}
+.d-academic{background:#faece7;color:#712b13}
+.d-operations{background:#e6f1fb;color:#0c447c}
+.d-hr{background:#fbeaf0;color:#72243e}
+.d-other{background:#f1efe8;color:#444}
+.p-high{color:#c0392b;font-weight:600;font-size:12px}
+.p-medium{color:#b8780a;font-weight:600;font-size:12px}
+.p-low{color:#3b6d11;font-weight:600;font-size:12px}
+.ai-box{background:#f8f8f6;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px;margin-top:12px}
+.ai-result{font-size:13px;line-height:1.8;white-space:pre-wrap;color:#1a1a1a}
+.ai-loading{font-size:13px;color:#888;font-style:italic}
+.filters-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filters-row input{flex:1;min-width:140px}
+.no-data{text-align:center;color:#bbb;padding:32px;font-size:13px}
+.quick-btn{font-size:12px;padding:5px 12px;background:#f5f5f3;border:1px solid #e5e5e3;color:#555}
+.quick-btn:hover{background:#eeeeed}
+.api-warning{background:#fff8e8;border:1px solid #f0d090;border-radius:8px;padding:10px 14px;font-size:12px;color:#7a5500;margin-bottom:14px}
+.reminder-alert{background:#fcebeb;border:1px solid #f09595;border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px}
+.reminder-dot{width:8px;height:8px;border-radius:50%;background:#e24b4a;margin-top:4px;flex-shrink:0}
+.reminder-text{font-size:13px;color:#501313}
+.reminder-sub{font-size:11px;color:#a32d2d;margin-top:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.chart-wrap{position:relative;height:240px;width:100%}
+.team-card{background:#fff;border:1px solid #e5e5e3;border-radius:10px;padding:14px 16px}
+.team-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0}
+.team-progress{height:6px;background:#f0f0ee;border-radius:3px;margin-top:6px}
+.team-progress-bar{height:6px;border-radius:3px;transition:width 0.3s}
+.overdue-badge{background:#fcebeb;color:#a32d2d;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:480px;border:1px solid #e5e5e3}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:16px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}.tab{padding:7px 10px;font-size:12px}}
+</style>
+</head>
+<body>
+<!-- JSONBIN SETUP SCREEN -->
+<div id="setup-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f3;z-index:999;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e5e5e3;border-radius:16px;padding:36px 32px;width:100%;max-width:480px;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+      <div style="width:40px;height:40px;background:#1a1a1a;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px">A</div>
+      <div><div style="font-weight:700;font-size:16px">AEC Upskills</div><div style="font-size:12px;color:#aaa">First-time Cloud Setup</div></div>
+    </div>
+    <div style="background:#e6f1fb;border-radius:8px;padding:12px 14px;margin-bottom:20px;font-size:12px;color:#0c447c;line-height:1.7">
+      <b>One-time setup — takes 2 minutes.</b><br>
+      This connects your tracker to a free cloud database so everyone's updates sync in real time.
+    </div>
+    <div style="font-weight:600;font-size:13px;margin-bottom:6px">Step 1 — Get your free JSONBin API key</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px">Go to <a href="https://jsonbin.io" target="_blank" style="color:#1a1a1a;font-weight:600">jsonbin.io</a> → Sign up free → Go to <b>API Keys</b> → copy your <b>Master Key</b></div>
+    <input id="setup-jbin-key" placeholder="Paste your JSONBin Master Key (starts with $2a$...)" style="width:100%;margin-bottom:14px;font-size:12px"/>
+    <div style="font-weight:600;font-size:13px;margin-bottom:6px">Step 2 — Connect</div>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">Choose whether this is a fresh setup or you already have a Bin ID from a previous setup on another device.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button id="setup-new-btn" onclick="setupNewBin()" class="primary" style="flex:1;padding:10px;font-size:13px">🆕 Fresh setup — create new database</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="flex:1;height:1px;background:#e5e5e3"></div><span style="font-size:11px;color:#aaa">or</span><div style="flex:1;height:1px;background:#e5e5e3"></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="setup-jbin-id" placeholder="Existing Bin ID (paste from previous setup)" style="flex:1;font-size:12px"/>
+      <button onclick="setupExistingBin()" style="padding:8px 14px;font-size:12px;white-space:nowrap">Connect existing</button>
+    </div>
+    <div id="setup-status" style="margin-top:12px;font-size:12px;display:none;padding:8px 12px;border-radius:8px"></div>
+    <div style="margin-top:14px;text-align:center">
+      <button onclick="backToLogin()" style="font-size:12px;color:#888;background:none;border:none;cursor:pointer">← Back to login</button>
+    </div>
+  </div>
+</div>
+<div id="login-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f3;z-index:1000;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border:1px solid #e5e5e3;border-radius:16px;padding:36px 32px;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px">
+      <div style="width:40px;height:40px;background:#1a1a1a;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px">A</div>
+      <div><div style="font-weight:700;font-size:16px">AEC Upskills</div><div style="font-size:12px;color:#aaa">Meeting Minutes Tracker</div></div>
+    </div>
+    <div id="login-role-step">
+      <div style="font-weight:600;font-size:14px;margin-bottom:6px">Who are you?</div>
+      <div style="font-size:12px;color:#888;margin-bottom:16px">Select your role to continue</div>
+      <button onclick="showLoginStep('admin')" style="width:100%;padding:12px;border:1px solid #d5d5d3;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px"><span style="font-size:18px">🔐</span><span>Admin (Full access)</span></button>
+      <button onclick="showLoginStep('employee')" style="width:100%;padding:12px;border:1px solid #d5d5d3;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px"><span style="font-size:18px">👤</span><span>Employee</span></button>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f0f0ee">
+        <div id="login-bin-status" style="font-size:11px;color:#aaa;margin-bottom:8px;text-align:center"></div>
+        <div style="text-align:center">
+          <button onclick="showSetupOverlay()" style="font-size:12px;color:#1a1a1a;font-weight:600;background:none;border:none;cursor:pointer;text-decoration:underline">First time on this device? Connect to database</button>
+        </div>
+      </div>
+    </div>
+    <div id="login-admin-step" style="display:none">
+      <button onclick="showLoginStep('role')" style="font-size:12px;color:#888;background:none;border:none;cursor:pointer;padding:0;margin-bottom:16px">← Back</button>
+      <div style="font-weight:600;font-size:14px;margin-bottom:16px">Admin login</div>
+      <input id="admin-pw-input" type="password" placeholder="Admin password" style="width:100%;margin-bottom:10px" onkeydown="if(event.key==='Enter')tryAdminLogin()"/>
+      <div id="admin-login-err" style="font-size:12px;color:#c0392b;margin-bottom:8px;display:none">Incorrect password.</div>
+      <button onclick="tryAdminLogin()" class="primary" style="width:100%;padding:10px">Login as Admin</button>
+    </div>
+    <div id="login-employee-step" style="display:none">
+      <button onclick="showLoginStep('role')" style="font-size:12px;color:#888;background:none;border:none;cursor:pointer;padding:0;margin-bottom:16px">← Back</button>
+      <div style="font-weight:600;font-size:14px;margin-bottom:16px">Employee login</div>
+      <select id="emp-name-sel" style="width:100%;margin-bottom:10px"><option value="">Select your name...</option></select>
+      <input id="emp-pin-input" type="password" placeholder="Your PIN (4+ digits, set by admin)" style="width:100%;margin-bottom:10px" onkeydown="if(event.key==='Enter')tryEmployeeLogin()"/>
+      <div id="emp-login-err" style="font-size:12px;color:#c0392b;margin-bottom:8px;display:none">Incorrect PIN. Contact your admin.</div>
+      <button onclick="tryEmployeeLogin()" class="primary" style="width:100%;padding:10px">Login</button>
+    </div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="topbar-logo">A</div>
+  <div><div class="topbar-title">AEC Upskills</div><div class="topbar-sub">Meeting Minutes Tracker</div></div>
+  <div class="topbar-right">
+    <span id="save-badge" class="save-badge">Saved</span>
+    <span id="sync-status" style="font-size:11px;display:none;padding:3px 10px;border-radius:20px;cursor:pointer" onclick="manualSync()" title="Click to sync now"></span>
+    <span id="reminder-count" style="display:none;font-size:12px;background:#fcebeb;color:#a32d2d;padding:3px 10px;border-radius:20px;font-weight:600;cursor:pointer" onclick="showTab('reminders')"></span>
+    <span id="topbar-user" style="font-size:12px;color:#555;background:#f5f5f3;padding:4px 12px;border-radius:20px;border:1px solid #e5e5e3;display:none"></span>
+    <button id="export-csv-btn" onclick="exportCSV()" style="font-size:12px;padding:5px 12px">Export CSV</button>
+    <button onclick="doLogout()" style="font-size:12px;padding:5px 12px;color:#c0392b;border-color:#f0c0b8">Logout</button>
+  </div>
+</div>
+
+<div class="main">
+<div class="tabs">
+  <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
+  <button class="tab" onclick="showTab('add-meeting')">Add meeting</button>
+  <button class="tab" onclick="showTab('action-items')">Action items</button>
+  <button class="tab" onclick="showTab('analytics')">Analytics</button>
+  <button class="tab" onclick="showTab('team')">Team</button>
+  <button class="tab" onclick="showTab('reminders')">Reminders</button>
+  <button class="tab" onclick="showTab('ai-tools')">AI tools</button>
+  <button class="tab" onclick="showTab('settings')">Settings</button>
+  <button class="tab" onclick="showTab('trash')" id="tab-btn-trash">🗑 Trash</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="panel active">
+  <div id="dash-reminders"></div>
+  <div class="stats" id="dash-stats"></div>
+  <div class="grid2">
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="section-label" style="margin:0">Meeting categories</div>
+      </div>
+      <div id="categories-list"></div>
+    </div>
+    <div>
+      <div class="section-label" style="margin-top:0">High priority items</div>
+      <div id="high-priority-list"></div>
+    </div>
+  </div>
+  <div id="category-drill" style="display:none;margin-top:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <button onclick="closeCategoryDrill()" style="font-size:12px;padding:4px 10px">&#8592; Back</button>
+      <div id="category-drill-title" style="font-weight:600;font-size:14px"></div>
+    </div>
+    <div id="category-drill-meetings"></div>
+  </div>
+</div>
+
+<!-- ADD MEETING -->
+<div id="tab-add-meeting" class="panel">
+  <div class="card">
+    <div class="section-label" style="margin-top:0">Meeting details</div>
+    <div class="row">
+      <input id="m-title" placeholder="Meeting title" style="flex:2;min-width:160px"/>
+      <input id="m-date" type="date" style="flex:1;min-width:140px"/>
+      <select id="m-dept" style="flex:1;min-width:130px">
+        <option value="All">All departments</option>
+        <option>Sales</option><option>Marketing</option><option>Accounts</option>
+        <option>Academic</option><option>Operations</option><option>HR</option><option>Other</option>
+      </select>
+      <select id="m-type" style="flex:1;min-width:150px"><option value="">Meeting type</option></select>
+    </div>
+    <div id="m-members-section">
+    <div class="section-label">Meeting members</div>
+    <div style="font-size:12px;color:#888;margin-bottom:8px">Select who can see and edit this meeting. Admin always has access.</div>
+    <div id="m-members-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
+    </div>
+    <div class="section-label">Meeting notes</div>
+    <div id="upload-zone" onclick="document.getElementById('file-upload').click()" style="border:2px dashed #d5d5d3;border-radius:10px;padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;transition:border-color 0.15s;background:#fafaf8">
+      <div style="font-size:28px;margin-bottom:6px">&#128206;</div>
+      <div style="font-size:13px;font-weight:600;color:#555">Click to upload meeting file</div>
+      <div style="font-size:12px;color:#aaa;margin-top:3px">Supports .xlsx, .xls, .csv, .txt, .docx</div>
+      <input type="file" id="file-upload" accept=".xlsx,.xls,.csv,.txt,.docx,.doc" style="display:none" onchange="handleFileUpload(this)"/>
+    </div>
+    <div id="file-status" style="display:none;font-size:12px;color:#3b6d11;background:#eaf3de;padding:8px 12px;border-radius:8px;margin-bottom:8px;font-weight:500"></div>
+
+    <!-- Sheet preview — shown instead of textarea for multi-sheet Excel -->
+    <div id="sheet-preview" style="display:none;margin-bottom:10px"></div>
+
+    <div id="notes-divider" style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <div style="flex:1;height:1px;background:#e5e5e3"></div>
+      <span style="font-size:12px;color:#aaa">or paste notes below</span>
+      <div style="flex:1;height:1px;background:#e5e5e3"></div>
+    </div>
+    <textarea id="m-notes" placeholder="Paste your raw meeting notes here, or upload a file above. The AI will automatically extract action items, owners, priorities, and deadlines."></textarea>
+    <div class="row" style="margin-top:12px;margin-bottom:0">
+      <button class="primary" onclick="aiExtract()">Extract action items with AI</button>
+      <button id="save-notes-btn" onclick="addMeetingManual()">Save notes only</button>
+      <button id="clear-upload-btn" onclick="clearUpload()" style="display:none;color:#c0392b;border-color:#f0c0b8">Clear file</button>
+    </div>
+    <div id="extract-result"></div>
+  </div>
+  <div id="extracted-items"></div>
+</div>
+
+<!-- ACTION ITEMS -->
+<div id="tab-action-items" class="panel">
+  <div class="filters-row">
+    <input id="fi-search" placeholder="Search tasks or owners..." oninput="renderItems()"/>
+    <select id="fi-meeting" onchange="renderItems()"><option value="">All meetings</option></select>
+    <select id="fi-dept" onchange="renderItems()">
+      <option value="">All departments</option>
+      <option>Sales</option><option>Marketing</option><option>Accounts</option>
+      <option>Academic</option><option>Operations</option><option>HR</option><option>Other</option>
+    </select>
+    <select id="fi-status" onchange="renderItems()">
+      <option value="">All statuses</option><option>Pending</option><option>Ongoing</option><option>Completed</option>
+    </select>
+    <select id="fi-priority" onchange="renderItems()">
+      <option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option>
+    </select>
+    <select id="fi-owner" onchange="renderItems()"><option value="">All owners</option></select>
+    <button onclick="showAddItemForm()">+ Add item</button>
+  </div>
+  <div id="add-item-form" style="display:none" class="card">
+    <div class="section-label" style="margin-top:0">New action item</div>
+    <div class="row">
+      <input id="ni-task" placeholder="Task description" style="flex:3;min-width:200px"/>
+      <select id="ni-owner-sel" style="flex:1;min-width:120px"><option value="">Assign owner</option></select>
+    </div>
+    <div class="row">
+      <select id="ni-dept" style="flex:1"><option value="Other">Department</option><option>Sales</option><option>Marketing</option><option>Accounts</option><option>Academic</option><option>Operations</option><option>HR</option><option>Other</option></select>
+      <select id="ni-priority" style="flex:1"><option value="Medium">Medium</option><option value="High">High</option><option value="Low">Low</option></select>
+      <input id="ni-deadline" type="date" style="flex:1" title="Deadline"/>
+      <select id="ni-meeting" style="flex:1"></select>
+    </div>
+    <div class="row" style="margin-bottom:0">
+      <button class="primary" onclick="addItemManual()">Save item</button>
+      <button onclick="document.getElementById('add-item-form').style.display='none'">Cancel</button>
+    </div>
+  </div>
+  <div class="stats" id="items-stats"></div>
+  <table>
+    <thead><tr>
+      <th style="width:24%">Task</th>
+      <th style="width:10%">Department</th>
+      <th style="width:10%">Owner</th>
+      <th style="width:7%">Priority</th>
+      <th style="width:10%">Deadline</th>
+      <th style="width:9%">Meeting</th>
+      <th style="width:9%">Status</th>
+      <th style="width:21%"></th>
+    </tr></thead>
+    <tbody id="items-tbody"></tbody>
+  </table>
+  <div id="items-no-data" class="no-data" style="display:none">No action items yet.</div>
+</div>
+
+<!-- ANALYTICS -->
+<div id="tab-analytics" class="panel">
+  <!-- Scope selector -->
+  <div class="card" style="padding:12px 16px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div style="font-weight:600;font-size:13px;white-space:nowrap">Viewing:</div>
+      <div id="analytics-scope-tabs" style="display:flex;gap:6px;flex-wrap:wrap;flex:1"></div>
+    </div>
+    <div id="analytics-meeting-sel-wrap" style="display:none;margin-top:10px">
+      <select id="analytics-meeting-sel" style="width:100%;font-size:13px" onchange="renderAnalytics()">
+        <option value="">— All sessions in this category —</option>
+      </select>
+    </div>
+  </div>
+  <div class="stats" id="analytics-stats"></div>
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <div style="font-weight:600;font-size:13px;margin-bottom:12px">Items by status</div>
+      <div class="chart-wrap"><canvas id="chart-status"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;font-size:13px;margin-bottom:12px">Items by department</div>
+      <div class="chart-wrap"><canvas id="chart-dept"></canvas></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div style="font-weight:600;font-size:13px;margin-bottom:12px">Priority breakdown</div>
+      <div class="chart-wrap"><canvas id="chart-priority"></canvas></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;font-size:13px;margin-bottom:12px">Items per session</div>
+      <div class="chart-wrap"><canvas id="chart-meetings"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM -->
+<div id="tab-team" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div class="section-label" style="margin:0">Team members</div>
+    <button onclick="openAddMember()">+ Add member</button>
+  </div>
+  <div id="team-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
+</div>
+
+<!-- REMINDERS -->
+<div id="tab-reminders" class="panel">
+  <div class="section-label" style="margin-top:0">Overdue items</div>
+  <div id="overdue-list"></div>
+  <div class="section-label">Due this week</div>
+  <div id="dueweek-list"></div>
+  <div class="section-label">Due next week</div>
+  <div id="duenext-list"></div>
+  <div class="section-label">No deadline set</div>
+  <div id="nodeadline-list"></div>
+</div>
+
+<!-- AI TOOLS -->
+<div id="tab-ai-tools" class="panel">
+  <div id="api-key-warning" class="api-warning" style="display:none"></div>
+  <div class="card">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">Ask AI about your meetings</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px">Ask anything — summaries, pending items, follow-up emails, CEO priorities.</div>
+    <textarea id="ai-question" placeholder="e.g. What are all pending marketing tasks?&#10;Who has the most overdue items?&#10;Draft a follow-up email for the team" style="min-height:70px"></textarea>
+    <div class="row" style="margin-top:10px;margin-bottom:0;flex-wrap:wrap;gap:6px">
+      <button class="primary" onclick="askAI()">Ask AI</button>
+      <button class="quick-btn" onclick="quickAsk('Summarize all pending action items grouped by department')">Pending by dept</button>
+      <button class="quick-btn" onclick="quickAsk('Who has the most tasks assigned? List their tasks.')">Who is busiest</button>
+      <button class="quick-btn" onclick="quickAsk('What are the high priority items that need CEO attention right now?')">CEO priorities</button>
+      <button class="quick-btn" onclick="quickAsk('Generate a professional follow-up email to the team based on the latest meeting action items')">Draft follow-up email</button>
+      <button class="quick-btn" onclick="quickAsk('What tasks have been pending across multiple meetings?')">Recurring issues</button>
+    </div>
+    <div id="ai-answer" class="ai-box" style="display:none"></div>
+  </div>
+</div>
+
+<!-- TRASH -->
+<div id="tab-trash" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div>
+      <div style="font-weight:600;font-size:15px">Trash</div>
+      <div style="font-size:12px;color:#aaa;margin-top:2px">Deleted items can be restored or permanently removed.</div>
+    </div>
+    <button class="danger" onclick="emptyTrash()" id="empty-trash-btn">Empty trash</button>
+  </div>
+  <div class="section-label" style="margin-top:0">Deleted meetings</div>
+  <div id="trash-meetings-list"></div>
+  <div class="section-label">Deleted tasks</div>
+  <div id="trash-items-list"></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="tab-settings" class="panel">
+  <div class="card">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">AI status</div>
+    <div style="font-size:13px;color:#3b6d11;background:#eaf3de;padding:8px 12px;border-radius:8px">AI features are active and ready to use.</div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">☁️ Cloud sync (JSONBin)</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px">Your database connection. Share the Bin ID with team members when setting up on a new device.</div>
+    <div style="font-size:12px;padding:8px 12px;background:#f5f5f3;border-radius:8px;font-family:monospace;word-break:break-all;margin-bottom:8px" id="settings-bin-id-display">Not connected</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="copyBinId()" style="font-size:12px;padding:5px 12px">Copy Bin ID</button>
+      <button onclick="forcePushToCloud()" style="font-size:12px;padding:5px 12px;background:#1a1a1a;color:#fff;border-color:#1a1a1a">⬆ Push local data to cloud</button>
+      <button onclick="showSetupOverlay()" style="font-size:12px;padding:5px 12px;color:#c0392b;border-color:#f0c0b8">Reconnect / Change</button>
+    </div>
+    <div id="push-status" style="font-size:12px;margin-top:8px;display:none"></div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">Admin password</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px">Default password is <b>admin1234</b>. Change it here.</div>
+    <div class="row" style="margin-bottom:0">
+      <input id="admin-pw-cur" type="password" placeholder="Current password" style="flex:1"/>
+      <input id="admin-pw-new" type="password" placeholder="New password (min 6 chars)" style="flex:1"/>
+      <button onclick="changeAdminPassword()">Update</button>
+    </div>
+    <div id="admin-pw-msg" style="font-size:12px;margin-top:8px;display:none"></div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">Meeting Admins</div>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">Assign team members as Meeting Admins for specific meeting categories. They can upload meetings, extract AI tasks, and manage their category.</div>
+    <div id="meeting-admin-list"></div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">Employee PINs</div>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">Set a PIN (min 4 characters) for each team member so they can log in. Members without a PIN cannot log in.</div>
+    <div id="pin-list"></div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">Anthropic API key</div>
+    <div style="font-size:12px;color:#888;margin-bottom:10px">Required for AI extraction and AI tools features.</div>
+    <div class="row" style="margin-bottom:8px">
+      <input id="api-key-input" type="password" placeholder="sk-ant-..." style="flex:1"/>
+      <button onclick="saveApiKey()">Save key</button>
+      <button onclick="clearApiKey()">Clear</button>
+    </div>
+    <div id="api-key-status" style="font-size:12px;color:#3b6d11"></div>
+  </div>
+  <div class="card" style="margin-top:10px">
+    <div style="font-weight:600;font-size:14px;margin-bottom:4px">Data management</div>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">Export or selectively clear your data. These actions cannot be undone.</div>
+    <div class="row" style="margin-bottom:10px">
+      <button onclick="exportCSV()">Export all data as CSV</button>
+    </div>
+    <div style="border-top:1px solid #f0f0ee;padding-top:12px;margin-top:4px">
+      <div style="font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Clear options</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="border:1px solid #f0f0ee;border-radius:8px;padding:12px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">Clear all meetings</div>
+          <div style="font-size:11px;color:#aaa;margin-bottom:8px">Removes all meetings and their action items</div>
+          <button class="danger" style="font-size:12px;padding:5px 12px;width:100%" onclick="clearMeetings()">Clear meetings</button>
+        </div>
+        <div style="border:1px solid #f0f0ee;border-radius:8px;padding:12px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">Clear action items only</div>
+          <div style="font-size:11px;color:#aaa;margin-bottom:8px">Keeps meetings but removes all tasks</div>
+          <button class="danger" style="font-size:12px;padding:5px 12px;width:100%" onclick="clearItems()">Clear items</button>
+        </div>
+        <div style="border:1px solid #f0f0ee;border-radius:8px;padding:12px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">Clear completed items</div>
+          <div style="font-size:11px;color:#aaa;margin-bottom:8px">Removes only items marked as completed</div>
+          <button class="danger" style="font-size:12px;padding:5px 12px;width:100%" onclick="clearCompletedItems()">Clear completed</button>
+        </div>
+        <div style="border:1px solid #f0f0ee;border-radius:8px;padding:12px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">Clear everything</div>
+          <div style="font-size:11px;color:#aaa;margin-bottom:8px">Wipes all meetings, items, and team data</div>
+          <button class="danger" style="font-size:12px;padding:5px 12px;width:100%" onclick="clearAllData()">Clear all data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<!-- EDIT ITEM MODAL -->
+<div id="modal-edit-item" class="modal-overlay">
+  <div class="modal" style="max-width:540px">
+    <h3>Edit action item</h3>
+    <input type="hidden" id="edit-item-id"/>
+    <div class="section-label" style="margin-top:0">Task</div>
+    <textarea id="edit-item-task" style="width:100%;min-height:70px;margin-bottom:10px"></textarea>
+    <div class="row">
+      <div style="flex:1">
+        <div class="section-label" style="margin-top:0">Assignee</div>
+        <select id="edit-item-owner" style="width:100%">
+          <option value="">Unassigned</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <div class="section-label" style="margin-top:0">Department</div>
+        <select id="edit-item-dept" style="width:100%">
+          <option>Sales</option><option>Marketing</option><option>Accounts</option>
+          <option>Academic</option><option>Operations</option><option>HR</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div style="flex:1">
+        <div class="section-label" style="margin-top:0">Priority</div>
+        <select id="edit-item-priority" style="width:100%">
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <div class="section-label" style="margin-top:0">Status</div>
+        <select id="edit-item-status" style="width:100%">
+          <option value="Pending">Pending</option>
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+      <div style="flex:1">
+        <div class="section-label" style="margin-top:0">Deadline</div>
+        <input type="date" id="edit-item-deadline" style="width:100%"/>
+      </div>
+    </div>
+    <div class="section-label">Meeting</div>
+    <select id="edit-item-meeting" style="width:100%;margin-bottom:14px">
+      <option value="">No meeting linked</option>
+    </select>
+    <div class="row" style="margin-bottom:0">
+      <button class="primary" onclick="saveEditItem()">Save changes</button>
+      <button onclick="closeEditModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MEMBER MODAL -->
+<div id="modal-member" class="modal-overlay">
+  <div class="modal">
+    <h3>Add team member</h3>
+    <div class="row"><input id="tm-name" placeholder="Full name" style="flex:1"/></div>
+    <div class="row">
+      <select id="tm-dept" style="flex:1"><option value="">Department</option><option>Sales</option><option>Marketing</option><option>Accounts</option><option>Academic</option><option>Operations</option><option>HR</option><option>Other</option></select>
+      <input id="tm-role" placeholder="Role / position" style="flex:1"/>
+    </div>
+    <div class="row" style="margin-bottom:0">
+      <button class="primary" onclick="saveMember()">Save member</button>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SK='aec_meetings_v2',IK='aec_items_v2',AK='aec_apikey_v1',TK='aec_team_v1',MK='aec_mtypes_v1';
+const TRI='aec_trash_items_v1',TRM='aec_trash_meetings_v1';
+const JBIN_KEY_K='aec_jsonbin_key',JBIN_ID_K='aec_jsonbin_id';
+
+// App version — bump this number every time you upload a new version
+const APP_VERSION='2.0.6';
+const VK='aec_app_version';
+(function checkVersion(){
+  const lastVersion=localStorage.getItem(VK);
+  if(lastVersion&&lastVersion!==APP_VERSION){
+    localStorage.setItem(VK,APP_VERSION);
+    window.location.reload(true); // force reload from server
+  } else {
+    localStorage.setItem(VK,APP_VERSION);
+  }
+})();
+const APK='aec_admin_pw_v1',PINS_K='aec_pins_v1',SESSION_K='aec_session_v1';
+let currentUser=null;
+
+function simpleHash(s){let h=5381;for(let i=0;i<s.length;i++)h=Math.imul(h,33)^s.charCodeAt(i);return(h>>>0).toString(16);}
+
+// Role helpers — safe to call before login (currentUser may be null)
+function isSuperAdmin(){return !!(currentUser&&currentUser.role==='admin');}
+function isMeetingAdmin(){return !!(currentUser&&currentUser.role==='meetingAdmin');}
+function isEmployee(){return !!(currentUser&&currentUser.role==='employee');}
+function isAnyAdmin(){return isSuperAdmin()||isMeetingAdmin();}
+
+// Get meeting categories assigned to current meeting admin
+function myAdminCategories(){
+  if(!currentUser||!isMeetingAdmin())return[];
+  return (meetingAdmins&&meetingAdmins[currentUser.memberId])||[];
+}
+
+// Check if current user can access a specific meeting
+function canAccessMeeting(m){
+  if(!currentUser)return false;
+  if(isSuperAdmin())return true;
+  // If meeting has no members list (old meetings) — admins and meeting admins see all
+  if(!m.members||m.members.length===0){
+    if(isMeetingAdmin()||isSuperAdmin())return true;
+    // Employees can see old meetings if they have tasks there
+    return (items||[]).some(i=>i.meetingId===m.id&&(i.owner||'').toLowerCase()===currentUser.name.toLowerCase());
+  }
+  // Meeting has members list — check if current user is in it
+  if(m.createdBy===currentUser.memberId)return true; // creator always has access
+  if(m.members.includes(currentUser.memberId))return true;
+  // Meeting admins see it if one of their categories matches or they have tasks
+  if(isMeetingAdmin()){
+    const cats=myAdminCategories();
+    if(cats.includes(m.typeId))return true;
+  }
+  return false;
+}
+
+// Get meetings visible to current user
+function getVisibleMeetings(){
+  if(!currentUser)return[];
+  if(isSuperAdmin())return meetings||[];
+  return (meetings||[]).filter(m=>canAccessMeeting(m));
+}
+
+// Get items scoped to current user's role
+function getMyAdminItems(){
+  if(!currentUser)return[];
+  if(isSuperAdmin())return items||[];
+  const visibleMids=new Set(getVisibleMeetings().map(m=>m.id));
+  if(isMeetingAdmin()){
+    return(items||[]).filter(i=>visibleMids.has(i.meetingId));
+  }
+  if(isEmployee()){
+    const name=(currentUser.name||'').toLowerCase().trim();
+    if(!name)return[];
+    // Show all items from accessible meetings, not just own tasks
+    return(items||[]).filter(i=>visibleMids.has(i.meetingId));
+  }
+  return[];
+}
+
+// Unregister datalabels globally — only applied per-chart via plugins:[]
+if(typeof ChartDataLabels!=='undefined')Chart.unregister(ChartDataLabels);
+const STATUS_CYCLE={Pending:'Ongoing',Ongoing:'Completed',Completed:'Pending'};
+const STATUS_BTN={
+  Pending:{label:'▶ Start',bg:'#e6f1fb',color:'#0c447c',border:'#b0cce8'},
+  Ongoing:{label:'✓ Complete',bg:'#eaf3de',color:'#3b6d11',border:'#b0d48a'},
+  Completed:{label:'↺ Reopen',bg:'#faeeda',color:'#633806',border:'#e0c080'}
+};
+const COLORS={Sales:'#7F77DD',Marketing:'#1D9E75',Accounts:'#BA7517',Academic:'#D85A30',Operations:'#378ADD',HR:'#D4537E',Other:'#888780'};
+let charts={};
+
+// ── JSONBin cloud sync ────────────────────────────────
+function getJBinKey(){return localStorage.getItem(JBIN_KEY_K)||''}
+function getJBinId(){return localStorage.getItem(JBIN_ID_K)||''}
+let _syncTimer=null;
+let _pendingSave=false;
+
+async function cloudLoad(){
+  const key=getJBinKey(),id=getJBinId();
+  if(!key||!id)return null;
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${id}/latest`,{headers:{'X-Master-Key':key,'X-Bin-Meta':'false'}});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch{return null;}
+}
+
+async function cloudSave(data){
+  const key=getJBinKey(),id=getJBinId();
+  if(!key||!id)return;
+  try{
+    const r=await fetch(`https://api.jsonbin.io/v3/b/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key},body:JSON.stringify(data)});
+    if(!r.ok){
+      const err=await r.text();
+      console.warn('Cloud save failed:',r.status,err);
+      showSyncStatus('error','⚠ Sync failed — click to retry');
+      return;
+    }
+    showSyncStatus('ok','☁ Synced');
+  }catch(e){
+    console.warn('Cloud save error:',e);
+    showSyncStatus('error','⚠ Sync failed — click to retry');
+  }
+}
+
+function showSyncStatus(type,msg){
+  const el=document.getElementById('sync-status');
+  if(!el)return;
+  el.style.display='inline';
+  if(type==='ok'){
+    el.textContent=msg;el.style.background='#eaf3de';el.style.color='#3b6d11';
+    setTimeout(()=>el.style.display='none',3000);
+  } else {
+    el.textContent=msg;el.style.background='#fcebeb';el.style.color='#c0392b';
+    // keep visible until fixed
+  }
+}
+
+async function manualSync(){
+  const el=document.getElementById('sync-status');
+  if(el){el.textContent='☁ Syncing...';el.style.background='#e6f1fb';el.style.color='#0c447c';el.style.display='inline';}
+  await cloudSave(getCloudData());
+}
+
+async function createNewBin(key){
+  const r=await fetch('https://api.jsonbin.io/v3/b',{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':key,'X-Bin-Name':'AEC-Meeting-Tracker','X-Bin-Private':'true'},body:JSON.stringify({meetings:[],items:[],team:[],meetingTypes:[],trashItems:[],trashMeetings:[]})});
+  if(!r.ok)throw new Error('Failed to create bin (check your API key)');
+  const d=await r.json();
+  return d.metadata.id;
+}
+
+function getCloudData(){
+  return{meetings,items,team,meetingTypes,trashItems,trashMeetings,pins,adminPw,meetingAdmins};
+}
+
+// Save to cloud immediately on every change
+function ss(k,v){
+  // Update in-memory variables
+  if(k===SK)meetings=v;
+  else if(k===IK)items=v;
+  else if(k===TK)team=v;
+  else if(k===MK)meetingTypes=v;
+  else if(k===TRI)trashItems=v;
+  else if(k===TRM)trashMeetings=v;
+  else if(k==='pins'){pins=v;}
+  else if(k==='adminPw'){adminPw=v;}
+  else if(k==='meetingAdmins'){meetingAdmins=v;}
+  // Keep only session/jsonbin keys in localStorage
+  else{localStorage.setItem(k,JSON.stringify(v));return;}
+  // Show saving indicator immediately
+  const el=document.getElementById('sync-status');
+  if(el){el.style.display='inline';el.textContent='☁ Saving...';el.style.background='#e6f1fb';el.style.color='#0c447c';}
+  // Save immediately — no debounce
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(async()=>{
+    await cloudSave(getCloudData());
+  },100);
+}
+
+// Poll for changes every 15s (so other users' updates appear)
+let _pollTimer=null;
+function startPolling(){
+  if(_pollTimer)clearInterval(_pollTimer);
+  _pollTimer=setInterval(async()=>{
+    const d=await cloudLoad();
+    if(!d)return;
+    // Only update if cloud has meaningful data (prevent blank overwrite)
+    if(!d.meetings&&!d.items&&!d.team)return;
+    const changed=JSON.stringify(d.meetings)!==JSON.stringify(meetings)||
+      JSON.stringify(d.items)!==JSON.stringify(items);
+    if(changed){
+      // Only replace if cloud data is newer/different and not empty
+      if(d.meetings)meetings=d.meetings;
+      if(d.items)items=d.items;
+      if(d.team)team=d.team;
+      if(d.meetingTypes)meetingTypes=d.meetingTypes;
+      if(d.trashItems)trashItems=d.trashItems;
+      if(d.trashMeetings)trashMeetings=d.trashMeetings;
+      if(d.pins)pins=d.pins;
+      if(d.adminPw)adminPw=d.adminPw;
+      if(d.meetingAdmins)meetingAdmins=d.meetingAdmins;
+      // Re-render current visible tab silently
+      const activeTab=document.querySelector('.tab.active');
+      if(activeTab){const m=(activeTab.getAttribute('onclick')||'').match(/showTab\('([^']+)'\)/);if(m){try{showTab(m[1]);}catch(e){}}}
+      updateReminderBadge();updateTrashBadge();
+    }
+  },5000);
+}
+
+// Legacy localStorage read (only used for auth keys now)
+function ls(k,d){try{return JSON.parse(localStorage.getItem(k)||d)}catch(e){return JSON.parse(d)}}
+
+function getApiKey(){return localStorage.getItem(AK)||''}
+function uid(){return 'x'+Math.random().toString(36).slice(2,9)}
+function deptClass(d){const m={Sales:'d-sales',Marketing:'d-marketing',Accounts:'d-accounts',Academic:'d-academic',Operations:'d-operations',HR:'d-hr'};return m[d]||'d-other'}
+function initials(n){return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+function avatarColor(n){const c=['#7F77DD','#1D9E75','#378ADD','#D85A30','#D4537E','#BA7517'];return c[n.charCodeAt(0)%c.length]}
+
+let meetings=[],items=[],team=[],meetingTypes=[],trashItems=[],trashMeetings=[];
+let pins={},adminPw='',meetingAdmins={}; // meetingAdmins: {memberId:[typeId,...]}
+
+
+function isOverdue(item){
+  if(!item.deadline||item.status==='Completed')return false;
+  return new Date(item.deadline)<new Date(new Date().toDateString());
+}
+function isDueThisWeek(item){
+  if(!item.deadline||item.status==='Completed'||isOverdue(item))return false;
+  const d=new Date(item.deadline),now=new Date();
+  const end=new Date(now);end.setDate(now.getDate()+(6-now.getDay()));
+  return d<=end;
+}
+function isDueNextWeek(item){
+  if(!item.deadline||item.status==='Completed'||isOverdue(item)||isDueThisWeek(item))return false;
+  const d=new Date(item.deadline),now=new Date();
+  const nextEnd=new Date(now);nextEnd.setDate(now.getDate()+(13-now.getDay()));
+  return d<=nextEnd;
+}
+function fmtDate(ds){if(!ds)return'—';const d=new Date(ds);return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}
+
+function showTab(t){
+  try{
+    const superAdminOnly=['team','trash','settings'];
+    const adminPlusTabs=['analytics']; // add-meeting now open to all
+    if(isEmployee()&&(superAdminOnly.includes(t)||adminPlusTabs.includes(t)))return;
+    if(isMeetingAdmin()&&superAdminOnly.includes(t))return;
+    const tabs=['dashboard','add-meeting','action-items','analytics','team','reminders','ai-tools','settings','trash'];
+    document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',tabs[i]===t));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    const panel=document.getElementById('tab-'+t);
+    if(panel)panel.classList.add('active');
+    if(t==='dashboard')renderDashboard();
+    else if(t==='action-items')renderItems();
+    else if(t==='analytics')renderAnalytics();
+    else if(t==='team')renderTeam();
+    else if(t==='reminders')renderReminders();
+    else if(t==='add-meeting'){renderMeetingTypeSelect();renderMeetingMemberSelector();}
+    else if(t==='ai-tools')checkApiKeyWarning();
+    else if(t==='settings'){const el=document.getElementById('api-key-input');const k=getApiKey();if(el&&k)el.value=k;renderPinList();renderMeetingAdminList();}
+    else if(t==='trash')renderTrash();
+  }catch(e){console.error('showTab error:',e);}
+}
+
+function getOverdueCount(){
+  return getMyAdminItems().filter(i=>isOverdue(i)).length;
+}
+
+function updateReminderBadge(){
+  const c=getOverdueCount();
+  const el=document.getElementById('reminder-count');
+  if(c>0){el.textContent=c+' overdue';el.style.display='inline';}
+  else el.style.display='none';
+}
+
+function renderDashboard(){
+  try{
+  updateReminderBadge();
+  const src=getMyAdminItems();
+  const visibleMtgs=getVisibleMeetings();
+  const total=src.length,done=src.filter(i=>i.status==='Completed').length,
+    ongoing=src.filter(i=>i.status==='Ongoing').length,pending=src.filter(i=>i.status==='Pending').length,
+    overdue=src.filter(i=>isOverdue(i)).length;
+  const roleLabel=isSuperAdmin()?'Total items':isMeetingAdmin()?'My meetings\' tasks':'My tasks';
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">${roleLabel}</div><div class="stat-val">${total}</div></div>
+    <div class="stat"><div class="stat-label">Completed</div><div class="stat-val" style="color:#3b6d11">${done}</div><div class="stat-sub">${total?Math.round(done/total*100):0}% completion</div></div>
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-val" style="color:#c07010">${pending}</div><div class="stat-sub">${ongoing} in progress</div></div>
+    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-val" style="color:${overdue?'#c0392b':'#3b6d11'}">${overdue}</div><div class="stat-sub">${isSuperAdmin()?meetings.length+' meetings total':''}</div></div>`;
+
+  const overdueItems=src.filter(i=>isOverdue(i)).slice(0,3);
+  document.getElementById('dash-reminders').innerHTML=overdueItems.map(i=>`
+    <div class="reminder-alert"><div class="reminder-dot"></div>
+      <div><div class="reminder-text">${i.task}</div>
+      <div class="reminder-sub">Due ${fmtDate(i.deadline)} · ${i.owner||'Unassigned'} · ${i.dept}</div></div>
+    </div>`).join('');
+
+  if(isSuperAdmin()){
+    renderCategories();
+    document.getElementById('high-priority-list').innerHTML=items.filter(i=>i.priority==='High'&&i.status!=='Completed').slice(0,6).map(i=>`
+      <div class="card" style="padding:10px 14px;border-left:3px solid #e24b4a;border-radius:0 10px 10px 0">
+        <div style="font-size:13px;font-weight:500">${i.task}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">${i.dept} · ${i.owner||'Unassigned'}${i.deadline?' · Due '+fmtDate(i.deadline):''}</div>
+      </div>`).join('')||`<div class="no-data">No high priority items.</div>`;
+  } else {
+    // Meeting admin or employee — show their visible meetings with lock on others
+    const myMeetingIds=new Set(visibleMtgs.map(m=>m.id));
+    const catEl=document.getElementById('categories-list');
+    const label=isMeetingAdmin()?'My assigned meetings':'Meetings';
+    catEl.innerHTML=`<div style="font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">${label}</div>`+
+      [...meetings].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>{
+        if(canAccessMeeting(m)){
+          const mItems=src.filter(i=>i.meetingId===m.id);
+          const pend=mItems.filter(i=>i.status!=='Completed').length;
+          const mt=meetingTypes.find(t=>t.id===m.typeId);
+          const color=mt?mt.color:'#1a1a1a';
+          return`<div class="card" style="padding:10px 14px;margin-bottom:6px;border-left:3px solid ${color};border-radius:0 10px 10px 0">
+            <div style="font-weight:600;font-size:13px">${m.title}</div>
+            <div style="font-size:12px;color:#888;margin-top:2px">${fmtDate(m.date)} · ${mItems.length} task${mItems.length!==1?'s':''}${pend?' · '+pend+' open':' · all done'}</div>
+          </div>`;
+        } else {
+          return`<div style="padding:10px 14px;margin-bottom:6px;background:#fafaf8;border:1px solid #f0f0ee;border-radius:10px;display:flex;align-items:center;gap:8px;opacity:0.5">
+            <span style="font-size:15px">🔒</span>
+            <div><div style="font-weight:500;font-size:13px;color:#aaa">${m.title}</div>
+            <div style="font-size:12px;color:#ccc">${fmtDate(m.date)}</div></div>
+          </div>`;
+        }
+      }).join('');
+    document.getElementById('high-priority-list').innerHTML=src.filter(i=>i.priority==='High'&&i.status!=='Completed').slice(0,6).map(i=>`
+      <div class="card" style="padding:10px 14px;border-left:3px solid #e24b4a;border-radius:0 10px 10px 0">
+        <div style="font-size:13px;font-weight:500">${i.task}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:3px">${i.dept}${i.deadline?' · Due '+fmtDate(i.deadline):''}</div>
+      </div>`).join('')||`<div class="no-data">No high priority items.</div>`;
+    document.getElementById('category-drill').style.display='none';
+  }
+  }catch(e){console.error('renderDashboard error:',e);}
+}
+
+function renderCategories(){
+  // Build category cards — each meeting type = one category
+  const catEl=document.getElementById('categories-list');
+  if(!catEl)return;
+
+  // Group meetings by typeId (fall back to title if no typeId)
+  const groups={};
+  meetings.forEach(m=>{
+    const key=m.typeId||('_title_'+m.title);
+    if(!groups[key])groups[key]={typeId:m.typeId,title:m.title,meetings:[]};
+    groups[key].meetings.push(m);
+  });
+
+  // Add any meeting types with 0 meetings yet
+  meetingTypes.forEach(mt=>{
+    if(!groups[mt.id])groups[mt.id]={typeId:mt.id,title:mt.name,meetings:[]};
+  });
+
+  const entries=Object.values(groups).sort((a,b)=>a.title.localeCompare(b.title));
+  if(!entries.length){catEl.innerHTML='<div class="no-data">No meetings yet.</div>';return;}
+
+  catEl.innerHTML=entries.map(g=>{
+    const mt=meetingTypes.find(t=>t.id===g.typeId);
+    const color=mt?mt.color:'#888780';
+    const sorted=[...g.meetings].sort((a,b)=>b.date.localeCompare(a.date));
+    const latest=sorted[0];
+    const allItems=g.meetings.flatMap(m=>items.filter(i=>i.meetingId===m.id));
+    const pending=allItems.filter(i=>i.status==='Pending').length;
+    const done=allItems.filter(i=>i.status==='Completed').length;
+    const total=allItems.length;
+    const pct=total?Math.round(done/total*100):0;
+    return`<div class="card" style="padding:12px 16px;cursor:pointer;border-left:3px solid ${color};border-radius:0 10px 10px 0;margin-bottom:8px" onclick="openCategoryDrill('${g.typeId||'_title_'+g.title}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:13px">${g.title}</div>
+          <div style="font-size:11px;color:#aaa;margin-top:2px">${g.meetings.length} meeting${g.meetings.length!==1?'s':''}${latest?' · Last: '+fmtDate(latest.date):''}</div>
+        </div>
+        <div style="text-align:right">
+          ${pending?`<span class="badge b-pending" style="margin-bottom:4px;display:block">${pending} pending</span>`:''}
+          <span style="font-size:11px;color:#aaa">${pct}% done</span>
+        </div>
+      </div>
+      <div style="height:4px;background:#f0f0ee;border-radius:2px;margin-top:8px">
+        <div style="height:4px;border-radius:2px;background:${color};width:${pct}%;transition:width 0.3s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCategoryDrill(key){
+  const drillEl=document.getElementById('category-drill');
+  const titleEl=document.getElementById('category-drill-title');
+  const meetingsEl=document.getElementById('category-drill-meetings');
+  if(!drillEl)return;
+
+  // Find group
+  let groupMeetings=[];
+  let groupTitle='';
+  if(key.startsWith('_title_')){
+    const t=key.slice(7);
+    groupMeetings=meetings.filter(m=>m.title===t&&!m.typeId);
+    groupTitle=t;
+  } else {
+    const mt=meetingTypes.find(t=>t.id===key);
+    groupTitle=mt?mt.name:key;
+    groupMeetings=meetings.filter(m=>m.typeId===key);
+  }
+
+  titleEl.textContent=groupTitle+' — all sessions';
+  const sorted=[...groupMeetings].sort((a,b)=>b.date.localeCompare(a.date));
+
+  meetingsEl.innerHTML=sorted.length?sorted.map(m=>{
+    const its=items.filter(i=>i.meetingId===m.id);
+    const pend=its.filter(i=>i.status==='Pending').length;
+    const done=its.filter(i=>i.status==='Completed').length;
+    const over=its.filter(i=>isOverdue(i)).length;
+    return`<div class="card" style="padding:12px 16px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:13px">${fmtDate(m.date)}</div>
+          <div style="font-size:12px;color:#aaa;margin-top:2px">${m.dept}</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
+          <span style="font-size:11px;color:#aaa">${its.length} items</span>
+          ${pend?`<span class="badge b-pending">${pend} pending</span>`:''}
+          ${over?`<span class="badge b-overdue">${over} overdue</span>`:''}
+          ${!pend&&!over?`<span class="badge b-completed">all done</span>`:''}
+          <button class="sm danger" onclick="event.stopPropagation();deleteMeeting('${m.id}');closeCategoryDrill();renderDashboard()">🗑</button>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        ${its.slice(0,4).map(i=>`<div style="font-size:12px;color:#555;padding:2px 0;display:flex;gap:6px;align-items:center">
+          <span class="badge b-${i.status.toLowerCase()}" style="font-size:10px;padding:1px 6px">${i.status}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i.task}</span>
+        </div>`).join('')}
+        ${its.length>4?`<div style="font-size:11px;color:#aaa;margin-top:4px">+${its.length-4} more items</div>`:''}
+      </div>
+    </div>`;
+  }).join(''):`<div class="no-data">No sessions recorded yet for this category.</div>`;
+
+  // Show drill, hide normal grid
+  document.querySelector('#tab-dashboard .grid2').style.display='none';
+  drillEl.style.display='block';
+}
+
+function closeCategoryDrill(){
+  document.querySelector('#tab-dashboard .grid2').style.display='';
+  document.getElementById('category-drill').style.display='none';
+}
+
+function renderMeetingMemberSelector(){
+  const el=document.getElementById('m-members-list');
+  if(!el)return;
+  // Find the member section wrapper (the div containing the label and member list)
+  const section=document.getElementById('m-members-section');
+  // Hide member selector for super admin (they see everything anyway)
+  if(isSuperAdmin()){
+    if(section)section.style.display='none';
+    return;
+  }
+  if(section)section.style.display='';
+  el.innerHTML=team.map(t=>{
+    const isMe=currentUser&&t.id===currentUser.memberId;
+    const col=avatarColor(t.name);
+    return`<label style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:20px;border:1px solid #e5e5e3;cursor:pointer;font-size:12px;background:${isMe?'#1a1a1a':'#fff'};color:${isMe?'#fff':'#555'}">
+      <input type="checkbox" id="m-member-${t.id}" value="${t.id}" ${isMe?'checked disabled':''}  style="accent-color:${col}"/>
+      ${t.name}
+    </label>`;
+  }).join('');
+}
+
+function getSelectedMembers(){
+  const checkboxes=document.querySelectorAll('[id^="m-member-"]');
+  const selected=[];
+  checkboxes.forEach(cb=>{if(cb.checked)selected.push(cb.value);});
+  return selected;
+}
+
+function renderMeetingTypeSelect(){
+  const sel=document.getElementById('m-type');
+  if(!sel)return;
+  const cur=sel.value;
+  // Meeting admins only see their assigned categories
+  const visibleTypes=isMeetingAdmin()
+    ?meetingTypes.filter(t=>myAdminCategories().includes(t.id))
+    :meetingTypes;
+  sel.innerHTML='<option value="">Meeting type</option>'+
+    visibleTypes.map(t=>`<option value="${t.id}" ${t.id===cur?'selected':''}>${t.name}</option>`).join('')+
+    (isSuperAdmin()?'<option value="__new__">+ Add new type...</option>':'');
+  sel.onchange=function(){
+    if(this.value==='__new__'){
+      const name=prompt('New meeting type name:');
+      if(name&&name.trim()){
+        const colors=['#7F77DD','#1D9E75','#D85A30','#378ADD','#D4537E','#BA7517','#639922'];
+        const mt={id:uid(),name:name.trim(),color:colors[meetingTypes.length%colors.length]};
+        meetingTypes.push(mt);
+        ss(MK,meetingTypes);
+        renderMeetingTypeSelect();
+        sel.value=mt.id;
+      } else {
+        sel.value='';
+      }
+    }
+  };
+}
+
+function renderItems(){
+  const src=getMyAdminItems();
+  const emp=isEmployee();
+  const s=document.getElementById('fi-search')?.value?.toLowerCase()||'';
+  const fD=document.getElementById('fi-dept')?.value||'';
+  const fS=document.getElementById('fi-status')?.value||'';
+  const fP=document.getElementById('fi-priority')?.value||'';
+  const fO=document.getElementById('fi-owner')?.value||'';
+  const fM=document.getElementById('fi-meeting')?.value||'';
+
+  // Populate meeting filter dropdown
+  const meetingSel=document.getElementById('fi-meeting');
+  if(meetingSel){
+    const cur=meetingSel.value;
+    const visibleMtgs=getVisibleMeetings().sort((a,b)=>b.date.localeCompare(a.date));
+    meetingSel.innerHTML='<option value="">All meetings</option>'+
+      visibleMtgs.map(m=>`<option value="${m.id}" ${m.id===cur?'selected':''}>${fmtDate(m.date)} — ${m.title}</option>`).join('');
+    meetingSel.style.display=emp?'none':'';
+  }
+
+  const ownerSel=document.getElementById('fi-owner');
+  const deptSel=document.getElementById('fi-dept');
+  const addBtn=document.querySelector('[onclick="showAddItemForm()"]');
+  if(emp){
+    if(ownerSel)ownerSel.style.display='none';
+    if(deptSel)deptSel.style.display='none';
+    if(addBtn)addBtn.style.display='none';
+  } else {
+    if(ownerSel){
+      ownerSel.style.display='';
+      const owners=[...new Set(src.map(i=>i.owner).filter(Boolean))].sort();
+      const cur=ownerSel.value;
+      ownerSel.innerHTML='<option value="">All owners</option>'+owners.map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('');
+    }
+    if(deptSel)deptSel.style.display='';
+    if(addBtn)addBtn.style.display=emp?'none':'';
+  }
+
+  const filtered=src.filter(i=>{
+    if(s&&!i.task.toLowerCase().includes(s)&&!(i.owner||'').toLowerCase().includes(s))return false;
+    if(!emp&&fD&&i.dept!==fD)return false;
+    if(fS&&i.status!==fS)return false;
+    if(fP&&i.priority!==fP)return false;
+    if(!emp&&fO&&i.owner!==fO)return false;
+    if(!emp&&fM&&i.meetingId!==fM)return false;
+    return true;
+  });
+
+  const total=filtered.length,done=filtered.filter(i=>i.status==='Completed').length,
+    ongoing=filtered.filter(i=>i.status==='Ongoing').length,pending=filtered.filter(i=>i.status==='Pending').length;
+  document.getElementById('items-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">${emp?'My tasks':'Showing'}</div><div class="stat-val">${total}</div></div>
+    <div class="stat"><div class="stat-label">Completed</div><div class="stat-val" style="color:#3b6d11">${done}</div></div>
+    <div class="stat"><div class="stat-label">In progress</div><div class="stat-val" style="color:#0c447c">${ongoing}</div></div>
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-val" style="color:#c07010">${pending}</div></div>`;
+
+  const mtgMap={};meetings.forEach(m=>mtgMap[m.id]=m.date);
+  const tbody=document.getElementById('items-tbody');
+  const noData=document.getElementById('items-no-data');
+  if(!filtered.length){tbody.innerHTML='';noData.style.display='';noData.textContent=emp?'No tasks assigned to you yet.':'No action items yet.';return;}
+  noData.style.display='none';
+  tbody.innerHTML=filtered.map(it=>{
+    const over=isOverdue(it);
+    const canEdit=!emp;
+    return`<tr>
+      <td style="word-break:break-word">${it.task}</td>
+      <td><span class="dept-pill ${deptClass(it.dept)}">${it.dept}</span></td>
+      <td style="color:#666;font-size:12px">${it.owner||'—'}</td>
+      <td><span class="p-${it.priority.toLowerCase()}">${it.priority}</span></td>
+      <td style="font-size:12px;color:${over?'#c0392b':'#666'};font-weight:${over?'600':'400'}">${it.deadline?fmtDate(it.deadline):'—'}${over?' ⚠':''}</td>
+      <td style="color:#aaa;font-size:12px">${mtgMap[it.meetingId]||'—'}</td>
+      <td><span class="badge b-${over&&it.status!=='Completed'?'overdue':it.status.toLowerCase()}">${over&&it.status!=='Completed'?'Overdue':it.status}</span></td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+        <button onclick="cycleStatus('${it.id}')" style="font-size:11px;padding:3px 9px;border-radius:20px;background:${STATUS_BTN[it.status]?.bg||'#f5f5f3'};color:${STATUS_BTN[it.status]?.color||'#555'};border:1px solid ${STATUS_BTN[it.status]?.border||'#d5d5d3'};cursor:pointer;font-weight:600;white-space:nowrap">${STATUS_BTN[it.status]?.label||'→'}</button>
+        ${canEdit?`<button class="sm" onclick="editItem('${it.id}')">edit</button><button class="sm danger" onclick="deleteItem('${it.id}')">del</button>`:''}
+      </td>
+    </tr>`;}).join('');
+}
+
+function cycleStatus(id){
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx===-1)return;
+  const newStatus=STATUS_CYCLE[items[idx].status];
+  if(!newStatus)return;
+  items[idx]={...items[idx],status:newStatus};
+  ss(IK,items);
+  renderItems();
+  renderDashboard();
+  updateReminderBadge();
+}
+function deleteItem(id){
+  if(!confirm('Move this task to trash?'))return;
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx===-1)return;
+  const [it]=items.splice(idx,1);
+  it.deletedAt=new Date().toISOString();
+  trashItems.unshift(it);
+  ss(IK,items);ss(TRI,trashItems);
+  renderItems();renderDashboard();updateReminderBadge();updateTrashBadge();
+}
+function deleteMeeting(id){
+  if(!confirm('Move this meeting and all its tasks to trash?'))return;
+  const mIdx=meetings.findIndex(m=>m.id===id);
+  if(mIdx===-1)return;
+  const [mtg]=meetings.splice(mIdx,1);
+  mtg.deletedAt=new Date().toISOString();
+  // soft-delete its items too
+  const mItems=items.filter(i=>i.meetingId===id);
+  mItems.forEach(i=>{i.deletedAt=new Date().toISOString();trashItems.unshift(i);});
+  items=items.filter(i=>i.meetingId!==id);
+  trashMeetings.unshift(mtg);
+  ss(SK,meetings);ss(IK,items);ss(TRI,trashItems);ss(TRM,trashMeetings);
+  renderDashboard();updateReminderBadge();updateTrashBadge();
+}
+function editItem(id){
+  const it=items.find(i=>i.id===id);
+  if(!it)return;
+  // Populate modal fields
+  document.getElementById('edit-item-id').value=id;
+  document.getElementById('edit-item-task').value=it.task||'';
+  document.getElementById('edit-item-dept').value=it.dept||'Other';
+  document.getElementById('edit-item-priority').value=it.priority||'Medium';
+  document.getElementById('edit-item-status').value=it.status||'Pending';
+  document.getElementById('edit-item-deadline').value=it.deadline||'';
+  // Populate owner dropdown
+  const ownerSel=document.getElementById('edit-item-owner');
+  ownerSel.innerHTML='<option value="">Unassigned</option>'+
+    team.map(t=>`<option value="${t.name}" ${it.owner===t.name?'selected':''}>${t.name} (${t.dept})</option>`).join('');
+  // Populate meeting dropdown
+  const mtgSel=document.getElementById('edit-item-meeting');
+  mtgSel.innerHTML='<option value="">No meeting linked</option>'+
+    [...meetings].sort((a,b)=>b.date.localeCompare(a.date))
+    .map(m=>`<option value="${m.id}" ${it.meetingId===m.id?'selected':''}>${fmtDate(m.date)} — ${m.title}</option>`).join('');
+  // Open modal
+  document.getElementById('modal-edit-item').classList.add('open');
+}
+
+function saveEditItem(){
+  const id=document.getElementById('edit-item-id').value;
+  const idx=items.findIndex(i=>i.id===id);
+  if(idx===-1)return;
+  items[idx]={
+    ...items[idx],
+    task:document.getElementById('edit-item-task').value.trim()||items[idx].task,
+    owner:document.getElementById('edit-item-owner').value,
+    dept:document.getElementById('edit-item-dept').value,
+    priority:document.getElementById('edit-item-priority').value,
+    status:document.getElementById('edit-item-status').value,
+    deadline:document.getElementById('edit-item-deadline').value,
+    meetingId:document.getElementById('edit-item-meeting').value||items[idx].meetingId,
+  };
+  ss(IK,items);
+  closeEditModal();
+  renderItems();
+  renderDashboard();
+  updateReminderBadge();
+}
+
+function closeEditModal(){
+  document.getElementById('modal-edit-item').classList.remove('open');
+}
+function restoreItem(id){
+  const idx=trashItems.findIndex(i=>i.id===id);
+  if(idx===-1)return;
+  const [it]=trashItems.splice(idx,1);
+  delete it.deletedAt;
+  items.push(it);
+  ss(IK,items);ss(TRI,trashItems);
+  renderTrash();renderDashboard();updateReminderBadge();updateTrashBadge();
+}
+function restoreMeeting(id){
+  const mIdx=trashMeetings.findIndex(m=>m.id===id);
+  if(mIdx===-1)return;
+  const [mtg]=trashMeetings.splice(mIdx,1);
+  delete mtg.deletedAt;
+  meetings.push(mtg);
+  // restore its items from trash too
+  const toRestore=trashItems.filter(i=>i.meetingId===id);
+  toRestore.forEach(i=>{delete i.deletedAt;items.push(i);});
+  trashItems=trashItems.filter(i=>i.meetingId!==id);
+  ss(SK,meetings);ss(IK,items);ss(TRI,trashItems);ss(TRM,trashMeetings);
+  renderTrash();renderDashboard();updateReminderBadge();updateTrashBadge();
+}
+function permDeleteItem(id){
+  if(!confirm('Permanently delete this task? This cannot be undone.'))return;
+  trashItems=trashItems.filter(i=>i.id!==id);
+  ss(TRI,trashItems);renderTrash();updateTrashBadge();
+}
+function permDeleteMeeting(id){
+  if(!confirm('Permanently delete this meeting and its tasks? This cannot be undone.'))return;
+  trashMeetings=trashMeetings.filter(m=>m.id!==id);
+  trashItems=trashItems.filter(i=>i.meetingId!==id);
+  ss(TRM,trashMeetings);ss(TRI,trashItems);renderTrash();updateTrashBadge();
+}
+function emptyTrash(){
+  const total=trashItems.length+trashMeetings.length;
+  if(!total){alert('Trash is already empty.');return;}
+  if(!confirm('Permanently delete everything in trash ('+total+' items)? This cannot be undone.'))return;
+  trashItems=[];trashMeetings=[];
+  ss(TRI,trashItems);ss(TRM,trashMeetings);renderTrash();updateTrashBadge();
+}
+function updateTrashBadge(){
+  const total=trashItems.length+trashMeetings.length;
+  const btn=document.getElementById('tab-btn-trash');
+  if(btn)btn.textContent=total?'🗑 Trash ('+total+')':'🗑 Trash';
+}
+function renderTrash(){
+  updateTrashBadge();
+  const emptyBtn=document.getElementById('empty-trash-btn');
+  const total=trashItems.length+trashMeetings.length;
+  if(emptyBtn)emptyBtn.style.display=total?'':'none';
+
+  const mEl=document.getElementById('trash-meetings-list');
+  if(!trashMeetings.length){
+    mEl.innerHTML='<div class="no-data">No deleted meetings.</div>';
+  } else {
+    mEl.innerHTML=trashMeetings.map(m=>{
+      const its=trashItems.filter(i=>i.meetingId===m.id);
+      const deletedDate=m.deletedAt?new Date(m.deletedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
+      return`<div class="card" style="padding:12px 16px;margin-bottom:8px;border-left:3px solid #e5e5e3;border-radius:0 10px 10px 0;opacity:0.85">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px;text-decoration:line-through;color:#888">${m.title}</div>
+            <div style="font-size:12px;color:#aaa;margin-top:3px">${fmtDate(m.date)} · ${m.dept}${its.length?' · '+its.length+' task'+(its.length!==1?'s':'')+'  also trashed':''}</div>
+            ${deletedDate?`<div style="font-size:11px;color:#ccc;margin-top:2px">Deleted ${deletedDate}</div>`:''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="sm primary" onclick="restoreMeeting('${m.id}')">↩ Restore</button>
+            <button class="sm danger" onclick="permDeleteMeeting('${m.id}')">Delete forever</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const iEl=document.getElementById('trash-items-list');
+  if(!trashItems.length){
+    iEl.innerHTML='<div class="no-data">No deleted tasks.</div>';
+  } else {
+    iEl.innerHTML=trashItems.map(it=>{
+      const deletedDate=it.deletedAt?new Date(it.deletedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
+      const mtg=meetings.find(m=>m.id===it.meetingId)||trashMeetings.find(m=>m.id===it.meetingId);
+      return`<div class="card" style="padding:10px 14px;margin-bottom:6px;border-left:3px solid #e5e5e3;border-radius:0 10px 10px 0;opacity:0.85">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;text-decoration:line-through;color:#888">${it.task}</div>
+            <div style="font-size:12px;color:#aaa;margin-top:3px">
+              <span class="dept-pill ${deptClass(it.dept)}" style="font-size:10px;padding:1px 7px;opacity:0.7">${it.dept}</span>
+              · ${it.owner||'Unassigned'} · <span class="p-${it.priority.toLowerCase()}">${it.priority}</span>
+              ${mtg?` · Meeting: ${fmtDate(mtg.date)}`:''}
+            </div>
+            ${deletedDate?`<div style="font-size:11px;color:#ccc;margin-top:2px">Deleted ${deletedDate}</div>`:''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="sm primary" onclick="restoreItem('${it.id}')">↩ Restore</button>
+            <button class="sm danger" onclick="permDeleteItem('${it.id}')">Delete forever</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function showAddItemForm(){
+  const f=document.getElementById('add-item-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  const sel=document.getElementById('ni-meeting');
+  sel.innerHTML='<option value="">Link to meeting</option>'+[...meetings].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<option value="${m.id}">${m.date} — ${m.title}</option>`).join('');
+  const osel=document.getElementById('ni-owner-sel');
+  osel.innerHTML='<option value="">Assign owner</option>'+team.map(t=>`<option>${t.name}</option>`).join('');
+}
+function addItemManual(){
+  const task=document.getElementById('ni-task').value.trim();
+  if(!task){alert('Please enter a task.');return}
+  items.push({id:uid(),task,owner:document.getElementById('ni-owner-sel').value||'',dept:document.getElementById('ni-dept').value||'Other',priority:document.getElementById('ni-priority').value||'Medium',deadline:document.getElementById('ni-deadline').value||'',status:'Pending',meetingId:document.getElementById('ni-meeting').value||''});
+  ss(IK,items);
+  document.getElementById('add-item-form').style.display='none';
+  document.getElementById('ni-task').value='';document.getElementById('ni-owner-sel').value='';document.getElementById('ni-deadline').value='';
+  renderItems();renderDashboard();updateReminderBadge();
+}
+
+function addMeetingManual(){
+  const title=document.getElementById('m-title').value.trim();
+  const date=document.getElementById('m-date').value;
+  if(!title||!date){alert('Please enter a title and date.');return}
+  const members=isSuperAdmin()?[]:getSelectedMembers();
+  const createdBy=currentUser?.memberId||null;
+  meetings.push({id:uid(),title,date,dept:document.getElementById('m-dept').value,typeId:document.getElementById('m-type')?.value&&document.getElementById('m-type').value!=='__new__'?document.getElementById('m-type').value:'',notes:document.getElementById('m-notes').value.trim(),members,createdBy});
+  ss(SK,meetings);
+  document.getElementById('m-title').value='';document.getElementById('m-date').value='';
+  document.getElementById('m-dept').value='All';document.getElementById('m-notes').value='';
+  document.getElementById('extract-result').innerHTML='';document.getElementById('extracted-items').innerHTML='';
+  renderMeetingMemberSelector();
+  alert('Meeting saved!');showTab('dashboard');
+}
+
+async function aiExtract(){
+  const apiKey=getApiKey();
+  if(!apiKey){alert('Please set your Anthropic API key in Settings first.');showTab('settings');return}
+
+  // ── Multi-sheet Excel mode ────────────────────────────────────────────────
+  const isMulti=document.getElementById('m-notes').dataset.mode==='excel_multi';
+  if(isMulti){
+    const selected=excelSheets.filter((_,i)=>{
+      const chk=document.getElementById('sheet-chk-'+i);
+      return chk&&chk.checked;
+    });
+    if(!selected.length){alert('Please select at least one sheet to import.');return}
+    const resEl=document.getElementById('extract-result');
+    resEl.innerHTML=`<div class="ai-box"><div class="ai-loading">Processing ${selected.length} sheet${selected.length!==1?'s':''} — 0 / ${selected.length} done...</div></div>`;
+    const title=document.getElementById('m-title').value.trim();
+    const dept=document.getElementById('m-dept').value;
+    const typeId=document.getElementById('m-type')?.value&&document.getElementById('m-type').value!=='__new__'?document.getElementById('m-type').value:'';
+    const teamList=team.length?team.map(t=>t.name).join(', '):'(no team members added yet)';
+    function resolveOwner(rawOwner){
+      if(!rawOwner||!rawOwner.trim())return'';
+      const r=rawOwner.trim().toLowerCase();
+      const exact=team.find(t=>t.name.toLowerCase()===r);if(exact)return exact.name;
+      const partial=team.find(t=>r.includes(t.name.toLowerCase())||t.name.toLowerCase().includes(r));if(partial)return partial.name;
+      const fn=team.find(t=>t.name.toLowerCase().split(' ')[0]===r.split(' ')[0]);if(fn)return fn.name;
+      return rawOwner.trim();
+    }
+    let doneCount=0,totalAdded=0;
+    const summaries=[];
+    for(const sheet of selected){
+      resEl.innerHTML=`<div class="ai-box"><div class="ai-loading">Processing sheet "${sheet.sheetName}" (${doneCount+1} / ${selected.length})...</div></div>`;
+      try{
+        const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',max_tokens:4000,
+          messages:[{role:'user',content:`Extract all action items from these meeting notes. Return ONLY a valid JSON array, no markdown. Each object: task (string), owner (string, use "" if unknown), priority ("High"/"Medium"/"Low"), deadline (ISO date string YYYY-MM-DD or "" if unknown), dept ("Sales"/"Marketing"/"Accounts"/"Academic"/"Operations"/"HR"/"Other"), status ("Pending").
+
+IMPORTANT: For the "owner" field, match to one of these team members (use exact name or ""): ${teamList}
+
+Meeting notes:
+${sheet.text}`}]
+        })});
+        const data=await resp.json();
+        let raw=data.content?.find(c=>c.type==='text')?.text||'[]';
+        raw=raw.replace(/```json|```/g,'').trim();
+        // Robust JSON repair for truncated responses
+        function repairJson(s){
+          // Find last complete object ending with }
+          let depth=0,lastClose=-1;
+          for(let i=0;i<s.length;i++){
+            if(s[i]==='{')depth++;
+            else if(s[i]==='}'){depth--;if(depth===0)lastClose=i;}
+          }
+          if(lastClose>-1)return s.slice(0,lastClose+1)+']';
+          return'[]';
+        }
+        let extracted=[];
+        try{
+          if(!raw.startsWith('['))raw='['+raw;
+          extracted=JSON.parse(raw);
+        }catch(e){
+          try{extracted=JSON.parse(repairJson(raw));}
+          catch(e2){
+            // Last resort: extract individual objects
+            const matches=raw.match(/\{[^{}]*"task"\s*:\s*"[^"]*"[^{}]*\}/g)||[];
+            matches.forEach(m=>{try{extracted.push(JSON.parse(m));}catch{}});
+          }
+        }
+        const mid=uid();
+        const _mbrs=isSuperAdmin()?[]:getSelectedMembers();meetings.push({id:mid,title:title||'Meeting '+sheet.isoDate,date:sheet.isoDate||new Date().toISOString().slice(0,10),dept,typeId,notes:sheet.text,members:_mbrs,createdBy:currentUser?.memberId||null});
+        const existingTasks=new Set(items.map(i=>i.task.toLowerCase().replace(/\s+/g,' ').trim()));
+        const addedTasks=new Set();
+        let sheetAdded=0;
+        extracted.forEach(e=>{
+          const norm=e.task.toLowerCase().replace(/\s+/g,' ').trim();
+          if(existingTasks.has(norm)||addedTasks.has(norm))return;
+          addedTasks.add(norm);existingTasks.add(norm);
+          items.push({id:uid(),task:e.task,dept:e.dept||'Other',owner:resolveOwner(e.owner),priority:e.priority||'Medium',deadline:e.deadline||'',status:'Pending',meetingId:mid});
+          sheetAdded++;totalAdded++;
+        });
+        summaries.push({sheet:sheet.sheetName,date:sheet.isoDate,added:sheetAdded,total:extracted.length});
+      }catch(ex){
+        summaries.push({sheet:sheet.sheetName,date:sheet.isoDate,error:ex.message});
+      }
+      doneCount++;
+    }
+    ss(SK,meetings);ss(IK,items);updateReminderBadge();
+    resEl.innerHTML=`<div class="ai-box" style="border-color:#c0dd97">
+      <div style="color:#3b6d11;font-size:13px;font-weight:600;margin-bottom:8px">✓ Imported ${doneCount} meeting${doneCount!==1?'s':''} — ${totalAdded} action items added</div>
+      ${summaries.map(s=>s.error
+        ?`<div style="font-size:12px;color:#c0392b;padding:3px 0">✗ ${s.sheet}: ${s.error}</div>`
+        :`<div style="font-size:12px;color:#555;padding:3px 0">✓ <b>${s.sheet}</b> (${s.date?fmtDate(s.date):'no date'}) — ${s.added} new task${s.added!==1?'s':''} added ${s.total>s.added?'('+( s.total-s.added)+' duplicates skipped)':''}</div>`
+      ).join('')}
+    </div>`;
+    document.getElementById('m-title').value='';document.getElementById('m-date').value='';
+    document.getElementById('m-dept').value='All';document.getElementById('m-type').value='';
+    const notesEl=document.getElementById('m-notes');
+    notesEl.value='';notesEl.style.display='';delete notesEl.dataset.mode;
+    document.getElementById('notes-divider').style.display='';
+    document.getElementById('save-notes-btn').style.display='';
+    document.getElementById('sheet-preview').style.display='none';
+    document.getElementById('sheet-preview').innerHTML='';
+    document.getElementById('file-status').style.display='none';
+    document.getElementById('clear-upload-btn').style.display='none';
+    excelSheets=[];
+    renderDashboard();
+    return;
+  }
+
+  // ── Single notes mode ─────────────────────────────────────────────────────
+  const title=document.getElementById('m-title').value.trim();
+  const date=document.getElementById('m-date').value;
+  const notes=document.getElementById('m-notes').value.trim();
+  if(!notes){alert('Please paste your meeting notes first.');return}  const resEl=document.getElementById('extract-result');
+  resEl.innerHTML='<div class="ai-box"><div class="ai-loading">Extracting action items with AI...</div></div>';
+  try{
+    const teamList=team.length?team.map(t=>t.name).join(', '):'(no team members added yet)';
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:4000,
+      messages:[{role:'user',content:`Extract all action items from these meeting notes. Return ONLY a valid JSON array, no markdown. Each object: task (string), owner (string, use "" if unknown), priority ("High"/"Medium"/"Low"), deadline (ISO date string YYYY-MM-DD or "" if unknown), dept ("Sales"/"Marketing"/"Accounts"/"Academic"/"Operations"/"HR"/"Other"), status ("Pending").
+
+IMPORTANT: For the "owner" field, you MUST match the person mentioned in the notes to one of the known team members listed below. Use the EXACT name from this list (case-sensitive). If no clear match, use "".
+Known team members: ${teamList}
+
+Meeting notes:
+${notes}`}]
+    })});
+    const data=await resp.json();
+    let raw=data.content?.find(c=>c.type==='text')?.text||'[]';
+    raw=raw.replace(/```json|```/g,'').trim();
+    function repairJson(s){
+      let depth=0,lastClose=-1;
+      for(let i=0;i<s.length;i++){
+        if(s[i]==='{')depth++;
+        else if(s[i]==='}'){depth--;if(depth===0)lastClose=i;}
+      }
+      if(lastClose>-1)return s.slice(0,lastClose+1)+']';
+      return'[]';
+    }
+    let extracted=[];
+    try{
+      if(!raw.startsWith('['))raw='['+raw;
+      extracted=JSON.parse(raw);
+    }catch(e){
+      try{extracted=JSON.parse(repairJson(raw));}
+      catch(e2){
+        const matches=raw.match(/\{[^{}]*"task"\s*:\s*"[^"]*"[^{}]*\}/g)||[];
+        matches.forEach(m=>{try{extracted.push(JSON.parse(m));}catch{}});
+      }
+    }
+    if(!extracted.length){resEl.innerHTML='<div class="ai-box">No action items found. Try adding more detail.</div>';return}
+    // Fuzzy-match owner name to a real team member
+    function resolveOwner(rawOwner){
+      if(!rawOwner||!rawOwner.trim())return'';
+      const raw=rawOwner.trim().toLowerCase();
+      const exact=team.find(t=>t.name.toLowerCase()===raw);if(exact)return exact.name;
+      const partial=team.find(t=>raw.includes(t.name.toLowerCase())||t.name.toLowerCase().includes(raw));if(partial)return partial.name;
+      const firstName=team.find(t=>t.name.toLowerCase().split(' ')[0]===raw.split(' ')[0]);if(firstName)return firstName.name;
+      return rawOwner.trim();
+    }
+    const mid=uid();
+    const _sm=isSuperAdmin()?[]:getSelectedMembers();meetings.push({id:mid,title:title||'Meeting '+date,date:date||new Date().toISOString().slice(0,10),dept:document.getElementById('m-dept').value,typeId:document.getElementById('m-type')?.value&&document.getElementById('m-type').value!=='__new__'?document.getElementById('m-type').value:'',notes,members:_sm,createdBy:currentUser?.memberId||null});
+    const existingTasks=new Set(items.map(i=>i.task.toLowerCase().replace(/\s+/g,' ').trim()));
+    const addedTasks=new Set();
+    extracted.forEach(e=>{
+      const norm=e.task.toLowerCase().replace(/\s+/g,' ').trim();
+      if(existingTasks.has(norm)||addedTasks.has(norm))return;
+      addedTasks.add(norm);
+      items.push({id:uid(),task:e.task,dept:e.dept||'Other',owner:resolveOwner(e.owner),priority:e.priority||'Medium',deadline:e.deadline||'',status:'Pending',meetingId:mid});
+    });
+    ss(SK,meetings);ss(IK,items);updateReminderBadge();
+    resEl.innerHTML=`<div class="ai-box" style="border-color:#c0dd97"><div style="color:#3b6d11;font-size:13px">Extracted ${extracted.length} action items and saved meeting.</div></div>`;
+    document.getElementById('extracted-items').innerHTML=`<div class="section-label">Extracted items</div>`+extracted.map(e=>`
+      <div class="card" style="padding:10px 14px;margin-bottom:6px">
+        <div style="font-weight:600;font-size:13px">${e.task}</div>
+        <div style="font-size:12px;color:#888;margin-top:3px">${e.dept||'Other'} · ${e.owner||'Unassigned'} · ${e.priority||'Medium'}${e.deadline?' · Due '+fmtDate(e.deadline):''}</div>
+      </div>`).join('');
+    document.getElementById('m-title').value='';document.getElementById('m-date').value='';
+    document.getElementById('m-dept').value='All';document.getElementById('m-type').value='';document.getElementById('m-notes').value='';
+  }catch(ex){resEl.innerHTML=`<div class="ai-box" style="border-color:#f09595"><div style="color:#c0392b;font-size:13px">Error: ${ex.message}</div></div>`}
+}
+
+let analyticsScope='__all__'; // '__all__' | typeId | '_title_TITLE'
+
+function renderAnalyticsScopeTabs(){
+  const wrap=document.getElementById('analytics-scope-tabs');
+  const selWrap=document.getElementById('analytics-meeting-sel-wrap');
+  if(!wrap)return;
+
+  // Build category groups same as dashboard
+  const groups={};
+  meetings.forEach(m=>{
+    const key=m.typeId||('_title_'+m.title);
+    if(!groups[key])groups[key]={key,title:m.title,meetings:[],typeId:m.typeId};
+    groups[key].meetings.push(m);
+  });
+  meetingTypes.forEach(mt=>{
+    if(!groups[mt.id])groups[mt.id]={key:mt.id,title:mt.name,meetings:[],typeId:mt.id};
+  });
+
+  const allEntries=[{key:'__all__',title:'All meetings'},...Object.values(groups).sort((a,b)=>a.title.localeCompare(b.title))];
+  // Meeting admins only see their assigned categories
+  const entries=isMeetingAdmin()
+    ?allEntries.filter(e=>e.key==='__all__'?false:myAdminCategories().includes(e.key)||e.key.startsWith('_title_'))
+    :allEntries;
+
+  wrap.innerHTML=entries.map(g=>{
+    const active=analyticsScope===g.key;
+    return`<button onclick="setAnalyticsScope('${g.key}')" style="font-size:12px;padding:5px 14px;border-radius:20px;border:1px solid ${active?'#1a1a1a':'#d5d5d3'};background:${active?'#1a1a1a':'#fff'};color:${active?'#fff':'#555'};font-weight:${active?'600':'400'};cursor:pointer;transition:all 0.15s">${g.title}${g.key!=='__all__'?' ('+g.meetings.length+')':''}</button>`;
+  }).join('');
+
+  // Show/hide per-session dropdown
+  const isCat=analyticsScope!=='__all__';
+  selWrap.style.display=isCat?'block':'none';
+  if(isCat){
+    const grp=groups[analyticsScope];
+    const sel=document.getElementById('analytics-meeting-sel');
+    const cur=sel.value;
+    const sorted=grp?[...grp.meetings].sort((a,b)=>b.date.localeCompare(a.date)):[];
+    sel.innerHTML='<option value="">— All sessions in this category —</option>'+sorted.map(m=>`<option value="${m.id}" ${m.id===cur?'selected':''}>${fmtDate(m.date)} — ${m.title}</option>`).join('');
+  }
+}
+
+function setAnalyticsScope(key){
+  analyticsScope=key;
+  // Reset per-session selection when switching category
+  const sel=document.getElementById('analytics-meeting-sel');
+  if(sel)sel.value='';
+  renderAnalytics();
+}
+
+function renderAnalytics(){
+  renderAnalyticsScopeTabs();
+
+  // Determine which items/meetings to show
+  let scopeItems=items;
+  let scopeMeetings=meetings;
+  let scopeLabel='All meetings';
+
+  if(analyticsScope!=='__all__'){
+    // Filter meetings by category
+    const key=analyticsScope;
+    if(key.startsWith('_title_')){
+      const t=key.slice(7);
+      scopeMeetings=meetings.filter(m=>m.title===t&&!m.typeId);
+    } else {
+      scopeMeetings=meetings.filter(m=>m.typeId===key);
+    }
+    // Per-session override
+    const selVal=document.getElementById('analytics-meeting-sel')?.value||'';
+    if(selVal){
+      scopeMeetings=scopeMeetings.filter(m=>m.id===selVal);
+      const sm=meetings.find(m=>m.id===selVal);
+      scopeLabel=sm?fmtDate(sm.date)+' — '+sm.title:scopeLabel;
+    } else {
+      const mt=meetingTypes.find(t=>t.id===analyticsScope);
+      scopeLabel=mt?mt.name:(analyticsScope.startsWith('_title_')?analyticsScope.slice(7):analyticsScope);
+      if(scopeMeetings.length>1)scopeLabel+=' ('+scopeMeetings.length+' sessions)';
+    }
+    const mIds=new Set(scopeMeetings.map(m=>m.id));
+    scopeItems=items.filter(i=>mIds.has(i.meetingId));
+  }
+
+  const total=scopeItems.length,done=scopeItems.filter(i=>i.status==='Completed').length,
+    overdue=scopeItems.filter(i=>isOverdue(i)).length,
+    high=scopeItems.filter(i=>i.priority==='High'&&i.status!=='Completed').length;
+  document.getElementById('analytics-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">Completion rate</div><div class="stat-val" style="color:#3b6d11">${total?Math.round(done/total*100):0}%</div><div class="stat-sub">${done} of ${total} done</div></div>
+    <div class="stat"><div class="stat-label">Sessions</div><div class="stat-val">${scopeMeetings.length}</div><div class="stat-sub">${total} total tasks</div></div>
+    <div class="stat"><div class="stat-label">Overdue items</div><div class="stat-val" style="color:${overdue?'#c0392b':'#3b6d11'}">${overdue}</div><div class="stat-sub">${scopeLabel}</div></div>
+    <div class="stat"><div class="stat-label">High priority open</div><div class="stat-val" style="color:#b8780a">${high}</div></div>`;
+
+  const destroyChart=id=>{if(charts[id]){charts[id].destroy();delete charts[id]}};
+
+  // Shared datalabels plugin config
+  const doughnutDataLabels={
+    formatter:(v,ctx)=>{
+      const total=ctx.dataset.data.reduce((a,b)=>a+b,0);
+      return v>0?v+'\n('+Math.round(v/total*100)+'%)':'';
+    },
+    color:'#fff',font:{size:12,weight:'600'},textAlign:'center'
+  };
+  const barDataLabels={
+    anchor:'end',align:'end',offset:2,
+    formatter:v=>v>0?v:'',
+    color:'#555',font:{size:11,weight:'600'}
+  };
+
+  // Chart 1 — Status doughnut
+  destroyChart('status');
+  const statusCounts={Completed:0,Ongoing:0,Pending:0};
+  scopeItems.forEach(i=>{statusCounts[i.status]=(statusCounts[i.status]||0)+1});
+  charts['status']=new Chart(document.getElementById('chart-status'),{
+    type:'doughnut',
+    data:{labels:Object.keys(statusCounts),datasets:[{data:Object.values(statusCounts),backgroundColor:['#639922','#378ADD','#BA7517'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:12},padding:12}},
+        datalabels:doughnutDataLabels
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 2 — Dept bar
+  destroyChart('dept');
+  const deptCounts={};scopeItems.forEach(i=>{deptCounts[i.dept]=(deptCounts[i.dept]||0)+1});
+  const deptKeys=Object.keys(deptCounts);
+  charts['dept']=new Chart(document.getElementById('chart-dept'),{
+    type:'bar',
+    data:{labels:deptKeys,datasets:[{data:Object.values(deptCounts),backgroundColor:deptKeys.map(d=>COLORS[d]||'#888'),borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:barDataLabels
+      },
+      scales:{y:{beginAtZero:true,grid:{color:'#f0f0ee'},ticks:{font:{size:11},stepSize:1}},x:{grid:{display:false},ticks:{font:{size:11}}}}
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 3 — Priority doughnut
+  destroyChart('priority');
+  const prCounts={High:0,Medium:0,Low:0};scopeItems.forEach(i=>{prCounts[i.priority]=(prCounts[i.priority]||0)+1});
+  charts['priority']=new Chart(document.getElementById('chart-priority'),{
+    type:'doughnut',
+    data:{labels:Object.keys(prCounts),datasets:[{data:Object.values(prCounts),backgroundColor:['#e24b4a','#BA7517','#639922'],borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:12},padding:12}},
+        datalabels:doughnutDataLabels
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  // Chart 4 — Items per session bar
+  destroyChart('meetings');
+  const sorted=[...scopeMeetings].sort((a,b)=>a.date.localeCompare(b.date));
+  const mtgLabels=sorted.map(m=>m.date.slice(5));
+  const mtgPending=sorted.map(m=>scopeItems.filter(i=>i.meetingId===m.id&&i.status==='Pending').length);
+  const mtgOngoing=sorted.map(m=>scopeItems.filter(i=>i.meetingId===m.id&&i.status==='Ongoing').length);
+  const mtgDone=sorted.map(m=>scopeItems.filter(i=>i.meetingId===m.id&&i.status==='Completed').length);
+  charts['meetings']=new Chart(document.getElementById('chart-meetings'),{
+    type:'bar',
+    data:{labels:mtgLabels,datasets:[
+      {label:'Completed',data:mtgDone,backgroundColor:'#639922',borderRadius:4,borderWidth:0},
+      {label:'Ongoing',data:mtgOngoing,backgroundColor:'#378ADD',borderRadius:4,borderWidth:0},
+      {label:'Pending',data:mtgPending,backgroundColor:'#BA7517',borderRadius:4,borderWidth:0}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:12},padding:10}},
+        datalabels:{
+          formatter:(v)=>v>0?v:'',
+          color:'#fff',font:{size:10,weight:'600'},anchor:'center',align:'center'
+        }
+      },
+      scales:{
+        x:{stacked:true,grid:{display:false},ticks:{font:{size:11}}},
+        y:{stacked:true,beginAtZero:true,grid:{color:'#f0f0ee'},ticks:{font:{size:11},stepSize:1}}
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+}
+
+function renderTeam(){
+  const grid=document.getElementById('team-grid');
+  if(!team.length){grid.innerHTML='<div class="no-data">No team members yet. Click + Add member.</div>';return}
+  grid.innerHTML=team.map(m=>{
+    const myItems=items.filter(i=>(i.owner||'').toLowerCase()===m.name.toLowerCase());
+    const done=myItems.filter(i=>i.status==='Completed').length;
+    const open=myItems.filter(i=>i.status!=='Completed').length;
+    const overdue=myItems.filter(i=>isOverdue(i)).length;
+    const pct=myItems.length?Math.round(done/myItems.length*100):0;
+    const col=avatarColor(m.name);
+    return`<div class="team-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="team-avatar" style="background:${col}20;color:${col}">${initials(m.name)}</div>
+        <div>
+          <div style="font-weight:600;font-size:14px">${m.name}</div>
+          <div style="font-size:12px;color:#888">${m.role||''} · <span class="dept-pill ${deptClass(m.dept)}" style="font-size:10px;padding:1px 7px">${m.dept}</span></div>
+        </div>
+        <button class="sm danger" style="margin-left:auto" onclick="deleteMember('${m.id}')">✕</button>
+      </div>
+      <div style="display:flex;gap:10px;font-size:12px;color:#888;margin-bottom:8px">
+        <span><b style="color:#1a1a1a">${myItems.length}</b> total</span>
+        <span><b style="color:#3b6d11">${done}</b> done</span>
+        <span><b style="color:#0c447c">${open}</b> open</span>
+        ${overdue?`<span class="overdue-badge">${overdue} overdue</span>`:''}
+      </div>
+      <div class="team-progress"><div class="team-progress-bar" style="width:${pct}%;background:${col}"></div></div>
+      <div style="font-size:11px;color:#aaa;margin-top:4px">${pct}% completion</div>
+    </div>`}).join('');
+}
+
+function openAddMember(){document.getElementById('modal-member').classList.add('open')}
+function closeModal(){document.getElementById('modal-member').classList.remove('open')}
+function saveMember(){
+  const name=document.getElementById('tm-name').value.trim();
+  if(!name){alert('Please enter a name.');return}
+  team.push({id:uid(),name,dept:document.getElementById('tm-dept').value||'Other',role:document.getElementById('tm-role').value.trim()});
+  ss(TK,team);closeModal();renderTeam();
+  document.getElementById('tm-name').value='';document.getElementById('tm-role').value='';
+}
+function deleteMember(id){
+  if(!confirm('Remove this team member?'))return;
+  team=team.filter(t=>t.id!==id);ss(TK,team);renderTeam();
+}
+
+function renderReminderItems(list,containerId,emptyMsg){
+  const el=document.getElementById(containerId);
+  if(!list.length){el.innerHTML=`<div class="no-data">${emptyMsg}</div>`;return}
+  el.innerHTML=list.map(i=>`
+    <div class="card" style="padding:12px 16px;${containerId==='overdue-list'?'border-left:3px solid #e24b4a;border-radius:0 10px 10px 0':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:13px;font-weight:500">${i.task}</div>
+          <div style="font-size:12px;color:#aaa;margin-top:3px">
+            <span class="dept-pill ${deptClass(i.dept)}" style="font-size:10px;padding:1px 7px">${i.dept}</span>
+            · ${i.owner||'Unassigned'}
+            ${i.deadline?' · Due <b style="color:'+( containerId==='overdue-list'?'#c0392b':'#b8780a')+'">'+ fmtDate(i.deadline)+'</b>':''}
+          </div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <span class="badge b-${i.priority.toLowerCase()==='high'?'overdue':i.priority.toLowerCase()==='medium'?'pending':'completed'}">${i.priority}</span>
+          <button class="sm primary" onclick="cycleStatus('${i.id}');renderReminders()">▶ Start</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderReminders(){
+  updateReminderBadge();
+  const src=getMyAdminItems();
+  const active=src.filter(i=>i.status!=='Completed');
+  renderReminderItems(active.filter(i=>isOverdue(i)),'overdue-list','No overdue items. Great job!');
+  renderReminderItems(active.filter(i=>isDueThisWeek(i)),'dueweek-list','Nothing due this week.');
+  renderReminderItems(active.filter(i=>isDueNextWeek(i)),'duenext-list','Nothing due next week.');
+  renderReminderItems(active.filter(i=>!i.deadline),'nodeadline-list','All items have deadlines set.');
+}
+
+async function askAI(){
+  const q=document.getElementById('ai-question').value.trim();
+  if(!q)return;
+  runAIQuestion(q);
+}
+function quickAsk(q){document.getElementById('ai-question').value=q;runAIQuestion(q);}
+
+async function runAIQuestion(q){
+  const apiKey=getApiKey();
+  if(!apiKey){alert('Please set your Anthropic API key in Settings first.');showTab('settings');return}
+  const ansEl=document.getElementById('ai-answer');
+  ansEl.style.display='block';
+  ansEl.innerHTML='<div class="ai-loading">Thinking...</div>';
+  const mtgMap={};meetings.forEach(m=>mtgMap[m.id]=m.date);
+  const context=`You are a meeting assistant for AEC Upskills. Here is the current data:
+
+MEETINGS:
+${meetings.map(m=>`- ${m.date}: ${m.title} (${m.dept})`).join('\n')}
+
+TEAM:
+${team.map(t=>`- ${t.name} (${t.role}, ${t.dept})`).join('\n')}
+
+ACTION ITEMS:
+${items.map(i=>`- [${i.status}][${i.priority}] ${i.task} | Owner: ${i.owner||'Unassigned'} | Dept: ${i.dept} | Deadline: ${i.deadline?fmtDate(i.deadline):'none'} | Meeting: ${mtgMap[i.meetingId]||'unknown'}${isOverdue(i)?' | OVERDUE':''}`).join('\n')}
+
+Answer the CEO's question clearly and concisely. Question: ${q}`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:context}]})});
+    const data=await resp.json();
+    const text=data.content?.find(c=>c.type==='text')?.text||'No response.';
+    ansEl.innerHTML=`<div class="ai-result">${text}</div>`;
+  }catch(ex){ansEl.innerHTML=`<div class="ai-result" style="color:#c0392b">Error: ${ex.message}</div>`}
+}
+
+function checkApiKeyWarning(){
+  const w=document.getElementById('api-key-warning');
+  if(!w)return;
+  if(!getApiKey()){
+    w.style.display='block';
+    w.textContent='⚠️ No Anthropic API key set. Go to Settings → Anthropic API key to add it before using AI features.';
+  } else {
+    w.style.display='none';
+  }
+}
+function saveApiKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(!k){alert('Please enter a key.');return}
+  localStorage.setItem(AK,k);
+  document.getElementById('api-key-status').textContent='Key saved successfully.';
+  document.getElementById('api-key-status').style.color='#3b6d11';
+  checkApiKeyWarning();
+}
+function clearApiKey(){
+  localStorage.removeItem(AK);
+  document.getElementById('api-key-input').value='';
+  document.getElementById('api-key-status').textContent='Key cleared.';
+  checkApiKeyWarning();
+}
+function clearMeetings(){
+  const count=meetings.length;
+  if(!count){alert('No meetings to clear.');return;}
+  if(!confirm('Delete all '+count+' meetings and their action items? This cannot be undone.'))return;
+  const mids=new Set(meetings.map(m=>m.id));
+  items=items.filter(i=>!mids.has(i.meetingId));
+  meetings=[];
+  ss(SK,meetings);ss(IK,items);
+  renderDashboard();updateReminderBadge();
+  alert('All meetings and their action items have been cleared.');
+}
+function clearItems(){
+  const count=items.length;
+  if(!count){alert('No action items to clear.');return;}
+  if(!confirm('Delete all '+count+' action items? Meetings will be kept. This cannot be undone.'))return;
+  items=[];
+  ss(IK,items);
+  renderDashboard();updateReminderBadge();
+  alert('All action items cleared. Meetings are still intact.');
+}
+function clearCompletedItems(){
+  const completed=items.filter(i=>i.status==='Completed');
+  if(!completed.length){alert('No completed items to clear.');return;}
+  if(!confirm('Remove '+completed.length+' completed items? This cannot be undone.'))return;
+  items=items.filter(i=>i.status!=='Completed');
+  ss(IK,items);
+  renderDashboard();updateReminderBadge();
+  alert(completed.length+' completed items removed.');
+}
+function clearAllData(){
+  if(!confirm('Delete ALL data including meetings, items, and team? This cannot be undone.'))return;
+  [SK,IK,TK].forEach(k=>localStorage.removeItem(k));
+  meetings=[];items=[];team=[];renderDashboard();updateReminderBadge();
+}
+function exportCSV(){
+  const mtgMap={};meetings.forEach(m=>mtgMap[m.id]=m.date+' — '+m.title);
+  const header=['Task','Department','Owner','Priority','Deadline','Status','Meeting','Overdue'];
+  const rows=items.map(i=>[i.task,i.dept,i.owner||'',i.priority,i.deadline?fmtDate(i.deadline):'',i.status,mtgMap[i.meetingId]||'',isOverdue(i)?'Yes':'No'].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(','));
+  const csv=[header.join(','),...rows].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='aec_upskills_action_items.csv';a.click();
+}
+
+document.getElementById('modal-member').addEventListener('click',function(e){if(e.target===this)closeModal()});
+document.getElementById('modal-edit-item').addEventListener('click',function(e){if(e.target===this)closeEditModal()});
+
+const uploadZone=document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.style.borderColor='#1a1a1a';uploadZone.style.background='#f0f0ee'});
+uploadZone.addEventListener('dragleave',()=>{uploadZone.style.borderColor='#d5d5d3';uploadZone.style.background='#fafaf8'});
+uploadZone.addEventListener('drop',e=>{
+  e.preventDefault();uploadZone.style.borderColor='#d5d5d3';uploadZone.style.background='#fafaf8';
+  const f=e.dataTransfer.files[0];if(f)processFile(f);
+});
+
+// Holds parsed multi-sheet data from Excel: [{sheetName, isoDate, text, alreadyImported}]
+let excelSheets=[];
+
+async function handleFileUpload(input){
+  const f=input.files[0];if(!f)return;
+  processFile(f);
+}
+
+async function processFile(file){
+  const statusEl=document.getElementById('file-status');
+  const clearBtn=document.getElementById('clear-upload-btn');
+  statusEl.style.display='block';
+  statusEl.style.background='#e6f1fb';statusEl.style.color='#0c447c';
+  statusEl.textContent='Reading: '+file.name+'...';
+  const ext=file.name.split('.').pop().toLowerCase();
+  excelSheets=[];
+  try{
+    let text='';
+    if(ext==='txt'){
+      text=await file.text();
+    } else if(ext==='csv'){
+      const raw=await file.text();
+      text=raw.split('\n').map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'')).join(' | ')).join('\n');
+    } else if(ext==='xlsx'||ext==='xls'){
+      excelSheets=await readExcel(file);
+      if(excelSheets.length===0){
+        statusEl.style.background='#fcebeb';statusEl.style.color='#c0392b';
+        statusEl.textContent='No readable sheets found in this file.';
+        return;
+      }
+      // Show multi-sheet preview
+      renderSheetPreview(file.name);
+      clearBtn.style.display='inline-block';
+      return;
+    } else if(ext==='docx'||ext==='doc'){
+      text=await readDocx(file);
+    } else {
+      statusEl.style.background='#fcebeb';statusEl.style.color='#c0392b';
+      statusEl.textContent='Unsupported file type. Please use .xlsx, .csv, .txt, or .docx';
+      return;
+    }
+    document.getElementById('m-notes').value=text;
+    statusEl.style.background='#eaf3de';statusEl.style.color='#3b6d11';
+    statusEl.textContent='File loaded: '+file.name+' ('+text.length+' characters extracted)';
+    clearBtn.style.display='inline-block';
+    if(!document.getElementById('m-title').value.trim()){
+      document.getElementById('m-title').value=file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+    }
+  }catch(err){
+    statusEl.style.background='#fcebeb';statusEl.style.color='#c0392b';
+    statusEl.textContent='Error reading file: '+err.message;
+  }
+}
+
+function renderSheetPreview(fileName){
+  const statusEl=document.getElementById('file-status');
+  const newCount=excelSheets.filter(s=>!s.alreadyImported).length;
+  const skipCount=excelSheets.filter(s=>s.alreadyImported).length;
+  statusEl.style.background='#eaf3de';statusEl.style.color='#3b6d11';
+  statusEl.textContent=`Found ${excelSheets.length} date sheet${excelSheets.length!==1?'s':''} in "${fileName}" — ${newCount} new, ${skipCount} already imported.`;
+
+  // Hide textarea + divider, show sheet preview inside the card
+  document.getElementById('m-notes').style.display='none';
+  document.getElementById('notes-divider').style.display='none';
+  document.getElementById('save-notes-btn').style.display='none';
+
+  const preview=document.getElementById('sheet-preview');
+  preview.style.display='block';
+  preview.innerHTML=
+    excelSheets.map((s,i)=>{
+      const tag=s.alreadyImported
+        ?`<span class="badge b-completed" style="font-size:10px">Already imported</span>`
+        :`<span class="badge b-pending" style="font-size:10px">New</span>`;
+      return`<div class="card" style="padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;${s.alreadyImported?'opacity:0.55':'border:1px solid #c0dd97'}">
+        <input type="checkbox" id="sheet-chk-${i}" ${s.alreadyImported?'':'checked'} ${s.alreadyImported?'disabled':''} style="width:16px;height:16px;cursor:${s.alreadyImported?'not-allowed':'pointer'}"/>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${s.sheetName}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px">${s.isoDate?fmtDate(s.isoDate):'Date unknown'} · ${s.text.length} chars extracted</div>
+        </div>
+        ${tag}
+      </div>`;
+    }).join('');
+
+  // Use a hidden flag instead of polluting the textarea value
+  document.getElementById('m-notes').dataset.mode='excel_multi';
+}
+
+function clearUpload(){
+  document.getElementById('file-upload').value='';
+  const notes=document.getElementById('m-notes');
+  notes.value='';
+  notes.style.display='';
+  delete notes.dataset.mode;
+  document.getElementById('notes-divider').style.display='';
+  document.getElementById('save-notes-btn').style.display='';
+  document.getElementById('sheet-preview').style.display='none';
+  document.getElementById('sheet-preview').innerHTML='';
+  document.getElementById('file-status').style.display='none';
+  document.getElementById('clear-upload-btn').style.display='none';
+  document.getElementById('extracted-items').innerHTML='';
+  document.getElementById('extract-result').innerHTML='';
+  excelSheets=[];
+}
+
+async function readExcel(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const data=new Uint8Array(e.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+
+        function parseSheetDate(name){
+          const cleaned=name.replace(/copy of /i,'').trim().replace(/\s+/g,''); // remove ALL spaces
+          const m1=cleaned.match(/^(\d{1,2})[\-\/\.](\d{1,2})[\-\/\.](\d{2,4})$/);
+          if(m1){
+            let[,d,mo,y]=m1;
+            if(y.length===2)y='20'+y;
+            const dt=new Date(+y,+mo-1,+d);
+            if(!isNaN(dt))return{date:dt,iso:dt.toISOString().slice(0,10)};
+          }
+          const m2=cleaned.match(/^(\d{4})[\-\/\.](\d{1,2})[\-\/\.](\d{1,2})$/);
+          if(m2){
+            let[,y,mo,d]=m2;
+            const dt=new Date(+y,+mo-1,+d);
+            if(!isNaN(dt))return{date:dt,iso:dt.toISOString().slice(0,10)};
+          }
+          return null;
+        }
+
+        function sheetToText(sheetName){
+          const ws=wb.Sheets[sheetName];
+          const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+          const seenRows=new Set();
+          let text='Sheet: '+sheetName+'\n\n';
+          rows.forEach(row=>{
+            const clean=row.map(c=>String(c||'').trim()
+              .replace(/[\u0000-\u001F\u007F-\u009F]/g,' ') // remove control chars
+              .replace(/"/g,"'") // replace double quotes with single to avoid JSON issues
+              .replace(/\s+/g,' ')
+            ).filter(c=>c&&c!=='None');
+            if(!clean.length)return;
+            const key=clean.join('|').toLowerCase().replace(/\s+/g,' ');
+            if(seenRows.has(key))return;
+            seenRows.add(key);
+            text+=clean.join(' | ')+'\n';
+          });
+          return text.trim();
+        }
+
+        // Collect all date-named sheets (skip "Copy of")
+        const sheets=[];
+        wb.SheetNames.forEach(name=>{
+          if(/copy of/i.test(name))return;
+          const parsed=parseSheetDate(name);
+          if(parsed){
+            const text=sheetToText(name);
+            // Check if already imported: a meeting with same date already saved
+            const alreadyImported=meetings.some(m=>m.date===parsed.iso);
+            sheets.push({sheetName:name,isoDate:parsed.iso,dateObj:parsed.date,text,alreadyImported});
+          }
+        });
+
+        // Sort sheets by date ascending
+        sheets.sort((a,b)=>a.dateObj-b.dateObj);
+
+        // If no date-named sheets found, fall back to all sheets as undated
+        if(!sheets.length){
+          wb.SheetNames.forEach(name=>{
+            const text=sheetToText(name);
+            sheets.push({sheetName:name,isoDate:'',dateObj:null,text,alreadyImported:false});
+          });
+        }
+
+        resolve(sheets);
+      }catch(err){reject(err)}
+    };
+    reader.onerror=()=>reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+async function readDocx(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const data=new Uint8Array(e.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        let text='Could not parse this .docx file. Please paste the notes manually.';
+        resolve(text);
+      }catch(e2){
+        resolve('Please paste your meeting notes manually for .docx files.');
+      }
+    };
+    reader.onerror=()=>reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+const today=new Date().toISOString().slice(0,10);
+document.getElementById('m-date').value=today;
+renderMeetingTypeSelect();
+
+// ── JSONBin setup functions ───────────────────────────
+function showSetupOverlay(){
+  document.getElementById('login-overlay').style.display='none';
+  const so=document.getElementById('setup-overlay');
+  so.style.display='flex';
+  // Pre-fill existing credentials if any
+  const key=getJBinKey(),id=getJBinId();
+  if(key)document.getElementById('setup-jbin-key').value=key;
+  if(id)document.getElementById('setup-jbin-id').value=id;
+  // Reset status
+  document.getElementById('setup-status').style.display='none';
+}
+
+function backToLogin(){
+  document.getElementById('setup-overlay').style.display='none';
+  document.getElementById('login-overlay').style.display='flex';
+  showLoginStep('role');
+}
+
+async function setupNewBin(){
+  const key=(document.getElementById('setup-jbin-key').value||'').trim();
+  const st=document.getElementById('setup-status');
+  if(!key){st.style.display='block';st.style.background='#fcebeb';st.style.color='#c0392b';st.textContent='Please paste your JSONBin Master Key first.';return;}
+  const btn=document.getElementById('setup-new-btn');
+  btn.textContent='Creating...';btn.disabled=true;
+  st.style.display='block';st.style.background='#e6f1fb';st.style.color='#0c447c';st.textContent='Creating your cloud database...';
+  try{
+    const id=await createNewBin(key);
+    localStorage.setItem(JBIN_KEY_K,key);
+    localStorage.setItem(JBIN_ID_K,id);
+    st.style.background='#eaf3de';st.style.color='#3b6d11';
+    st.innerHTML=`✓ Database created! Your Bin ID: <b>${id}</b><br><span style="font-size:11px">Save this ID — share it when setting up on another device.</span>`;
+    btn.textContent='🆕 Fresh setup — create new database';btn.disabled=false;
+    setTimeout(()=>finishSetupAndBoot(),2000);
+  }catch(e){
+    st.style.background='#fcebeb';st.style.color='#c0392b';st.textContent='Error: '+e.message;
+    btn.textContent='🆕 Fresh setup — create new database';btn.disabled=false;
+  }
+}
+
+async function setupExistingBin(){
+  const key=(document.getElementById('setup-jbin-key').value||'').trim();
+  const id=(document.getElementById('setup-jbin-id').value||'').trim();
+  const st=document.getElementById('setup-status');
+  if(!key||!id){st.style.display='block';st.style.background='#fcebeb';st.style.color='#c0392b';st.textContent='Please enter both Master Key and Bin ID.';return;}
+  st.style.display='block';st.style.background='#e6f1fb';st.style.color='#0c447c';st.textContent='Connecting to existing database...';
+  try{
+    localStorage.setItem(JBIN_KEY_K,key);
+    localStorage.setItem(JBIN_ID_K,id);
+    const data=await cloudLoad();
+    if(!data){
+      st.style.background='#fcebeb';st.style.color='#c0392b';st.textContent='Could not connect. Check your Master Key and Bin ID and try again.';
+      localStorage.removeItem(JBIN_KEY_K);localStorage.removeItem(JBIN_ID_K);return;
+    }
+    st.style.background='#eaf3de';st.style.color='#3b6d11';st.textContent='✓ Connected! Loading data...';
+    setTimeout(()=>finishSetupAndBoot(),1000);
+  }catch(e){
+    st.style.background='#fcebeb';st.style.color='#c0392b';st.textContent='Error: '+e.message;
+  }
+}
+
+async function finishSetupAndBoot(){
+  document.getElementById('setup-overlay').style.display='none';
+  const data=await cloudLoad();
+  if(data){
+    meetings=data.meetings||[];items=data.items||[];team=data.team||[];
+    meetingTypes=data.meetingTypes||[];trashItems=data.trashItems||[];trashMeetings=data.trashMeetings||[];
+    pins=data.pins||{};adminPw=data.adminPw||'';meetingAdmins=data.meetingAdmins||{};
+  }
+  const binDisplay=document.getElementById('settings-bin-id-display');
+  if(binDisplay)binDisplay.textContent='Bin ID: '+getJBinId();
+  renderMeetingTypeSelect();
+  startPolling();
+  document.getElementById('login-overlay').style.display='flex';
+  showLoginStep('role');
+}
+
+function copyBinId(){
+  const id=getJBinId();
+  if(!id){alert('No Bin ID set yet.');return;}
+  navigator.clipboard.writeText(id).then(()=>alert('Bin ID copied: '+id)).catch(()=>alert('Bin ID: '+id));
+}
+
+async function forcePushToCloud(){
+  const st=document.getElementById('push-status');
+  if(!confirm('This will push ALL your current data to the cloud. All other devices will see this data. Continue?'))return;
+  st.style.display='block';st.style.background='#e6f1fb';st.style.color='#0c447c';st.textContent='Pushing to cloud...';
+  try{
+    // Grab any localStorage data that might be newer than in-memory
+    try{
+      const lsMeetings=JSON.parse(localStorage.getItem('aec_meetings_v2')||'[]');
+      const lsItems=JSON.parse(localStorage.getItem('aec_items_v2')||'[]');
+      const lsTeam=JSON.parse(localStorage.getItem('aec_team_v1')||'[]');
+      const lsMTypes=JSON.parse(localStorage.getItem('aec_mtypes_v1')||'[]');
+      if(lsMeetings.length>meetings.length){meetings=lsMeetings;}
+      if(lsItems.length>items.length){items=lsItems;}
+      if(lsTeam.length>team.length){team=lsTeam;}
+      if(lsMTypes.length>meetingTypes.length){meetingTypes=lsMTypes;}
+    }catch(e){}
+    await cloudSave(getCloudData());
+    localStorage.setItem('aec_migrated_v1','1');
+    st.style.background='#eaf3de';st.style.color='#3b6d11';
+    st.textContent='✓ Done! Pushed '+meetings.length+' meetings, '+items.length+' tasks, '+team.length+' team members to cloud. All devices will now see this data.';
+    renderDashboard();
+  }catch(e){
+    st.style.background='#fcebeb';st.style.color='#c0392b';
+    st.textContent='Error: '+e.message;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTH SYSTEM
+// ═══════════════════════════════════════════════════════
+function getAdminPw(){return adminPw||simpleHash('admin1234');}
+function getPins(){return pins||{};}
+function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_K)||'null')}catch{return null}}
+function setSession(s){localStorage.setItem(SESSION_K,JSON.stringify(s));}
+function clearSession(){localStorage.removeItem(SESSION_K);}
+
+// ── Main boot ─────────────────────────────────────────
+(async function bootApp(){
+  const showLoading=(msg)=>{
+    document.getElementById('setup-overlay').style.display='none';
+    document.getElementById('login-overlay').style.display='none';
+    const overlay=document.createElement('div');
+    overlay.id='boot-loading';
+    overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#f5f5f3;z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px';
+    overlay.innerHTML=`<div style="width:36px;height:36px;border:3px solid #e5e5e3;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="font-size:13px;color:#888">${msg}</div>`;
+    if(!document.getElementById('spin-style')){const s=document.createElement('style');s.id='spin-style';s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';document.head.appendChild(s);}
+    document.body.appendChild(overlay);
+  };
+  const hideLoading=()=>{const el=document.getElementById('boot-loading');if(el)el.remove();};
+
+  const key=getJBinKey(),id=getJBinId();
+  if(!key||!id){
+    // No credentials saved — keep setup screen visible
+    document.getElementById('setup-overlay').style.display='flex';
+    return;
+  }
+
+  // Credentials exist — hide setup, show loading spinner
+  document.getElementById('setup-overlay').style.display='none';
+  showLoading('Connecting to cloud database...');
+  const data=await cloudLoad();
+  hideLoading();
+
+  if(!data){
+    // Can't connect — show setup again with error
+    document.getElementById('setup-jbin-key').value=key;
+    document.getElementById('setup-jbin-id').value=id;
+    const st=document.getElementById('setup-status');
+    st.style.display='block';st.style.background='#fcebeb';st.style.color='#c0392b';
+    st.textContent='Could not reach cloud database. Check your connection or re-enter credentials.';
+    document.getElementById('setup-overlay').style.display='flex';
+    return;
+  }
+
+  meetings=data.meetings||[];items=data.items||[];team=data.team||[];
+  meetingTypes=data.meetingTypes||[];trashItems=data.trashItems||[];trashMeetings=data.trashMeetings||[];
+  pins=data.pins||{};adminPw=data.adminPw||'';meetingAdmins=data.meetingAdmins||{};
+
+  // ── One-time migration from localStorage ──────────────
+  // Check if localStorage has data not yet in cloud — merge it up
+  const MIGRATED_K='aec_migrated_v1';
+  if(!localStorage.getItem(MIGRATED_K)){
+    try{
+      const lsMeetings=JSON.parse(localStorage.getItem('aec_meetings_v2')||'[]');
+      const lsItems=JSON.parse(localStorage.getItem('aec_items_v2')||'[]');
+      const lsTeam=JSON.parse(localStorage.getItem('aec_team_v1')||'[]');
+      const lsMTypes=JSON.parse(localStorage.getItem('aec_mtypes_v1')||'[]');
+      const lsTrashI=JSON.parse(localStorage.getItem('aec_trash_items_v1')||'[]');
+      const lsTrashM=JSON.parse(localStorage.getItem('aec_trash_meetings_v1')||'[]');
+      const lsPins=JSON.parse(localStorage.getItem('aec_pins_v1')||'{}');
+      const lsAdminPw=localStorage.getItem('aec_admin_pw_v1')||'';
+      if(lsMeetings.length||lsItems.length||lsTeam.length){
+        // Merge: use localStorage data as base, add any new cloud items not already present
+        const cloudMeetingIds=new Set(meetings.map(m=>m.id));
+        const cloudItemIds=new Set(items.map(i=>i.id));
+        const cloudTeamIds=new Set(team.map(t=>t.id));
+        lsMeetings.forEach(m=>{if(!cloudMeetingIds.has(m.id))meetings.push(m);});
+        lsItems.forEach(i=>{if(!cloudItemIds.has(i.id))items.push(i);});
+        lsTeam.forEach(t=>{if(!cloudTeamIds.has(t.id))team.push(t);});
+        if(!meetingTypes.length&&lsMTypes.length)meetingTypes=lsMTypes;
+        if(!trashItems.length&&lsTrashI.length)trashItems=lsTrashI;
+        if(!trashMeetings.length&&lsTrashM.length)trashMeetings=lsTrashM;
+        if(!Object.keys(pins).length&&Object.keys(lsPins).length)pins=lsPins;
+        if(!adminPw&&lsAdminPw)adminPw=lsAdminPw;
+        await cloudSave(getCloudData());
+        console.log('Migration complete: localStorage data merged to cloud.');
+      }
+      localStorage.setItem(MIGRATED_K,'1');
+    }catch(e){console.warn('Migration error:',e);}
+  }
+
+  // Update settings bin ID display
+  const binDisplay=document.getElementById('settings-bin-id-display');
+  if(binDisplay)binDisplay.textContent='Bin ID: '+id;
+
+  renderMeetingTypeSelect();
+  startPolling();
+
+  // Check session
+  const saved=getSession();
+  if(saved&&saved.role){
+    const teamLoaded=team.length>0;
+    if(saved.role==='employee'&&teamLoaded&&!team.find(t=>t.id===saved.memberId)){
+      clearSession();
+    } else {
+      // Refresh data from cloud before restoring session
+      const fresh=await cloudLoad();
+      if(fresh){
+        meetings=fresh.meetings||meetings;items=fresh.items||items;team=fresh.team||team;
+        meetingTypes=fresh.meetingTypes||meetingTypes;trashItems=fresh.trashItems||trashItems;
+        trashMeetings=fresh.trashMeetings||trashMeetings;pins=fresh.pins||pins;
+        adminPw=fresh.adminPw||adminPw;meetingAdmins=fresh.meetingAdmins||meetingAdmins;
+      }
+      doLogin(saved);return;
+    }
+  }
+  document.getElementById('login-overlay').style.display='flex';
+  showLoginStep('role');
+})();
+
+
+function showLoginStep(step){
+  document.getElementById('login-role-step').style.display=step==='role'?'block':'none';
+  document.getElementById('login-admin-step').style.display=step==='admin'?'block':'none';
+  document.getElementById('login-employee-step').style.display=step==='employee'?'block':'none';
+  if(step==='role'){
+    // Show which database this device is connected to
+    const binEl=document.getElementById('login-bin-status');
+    const id=getJBinId();
+    if(binEl)binEl.textContent=id?'Connected to Bin: '+id.slice(0,8)+'...':'⚠️ Not connected to any database';
+  }
+  if(step==='admin'){document.getElementById('admin-pw-input').value='';document.getElementById('admin-login-err').style.display='none';}
+  if(step==='employee'){
+    document.getElementById('emp-pin-input').value='';
+    document.getElementById('emp-login-err').style.display='none';
+    const pins=getPins();
+    const eligible=team.filter(t=>pins[t.id]);
+    const sel=document.getElementById('emp-name-sel');
+    sel.innerHTML='<option value="">Select your name...</option>'+eligible.map(t=>`<option value="${t.id}">${t.name} (${t.dept})</option>`).join('');
+    if(!eligible.length)sel.innerHTML='<option value="">No employees set up yet — contact admin</option>';
+  }
+}
+
+function tryAdminLogin(){
+  const pw=document.getElementById('admin-pw-input').value;
+  if(simpleHash(pw)!==getAdminPw()){document.getElementById('admin-login-err').style.display='block';return;}
+  doLogin({role:'admin',memberId:null,name:'Admin'});
+}
+
+function tryEmployeeLogin(){
+  const memberId=document.getElementById('emp-name-sel').value;
+  const pin=document.getElementById('emp-pin-input').value;
+  const errEl=document.getElementById('emp-login-err');
+  if(!memberId){errEl.textContent='Please select your name.';errEl.style.display='block';return;}
+  const p=getPins();
+  if(!p[memberId]||simpleHash(pin)!==p[memberId]){errEl.textContent='Incorrect PIN. Contact your admin.';errEl.style.display='block';return;}
+  const member=team.find(t=>t.id===memberId);
+  // Check if this member is a meeting admin
+  const isMtgAdmin=meetingAdmins[memberId]&&meetingAdmins[memberId].length>0;
+  doLogin({role:isMtgAdmin?'meetingAdmin':'employee',memberId,name:member?member.name:memberId});
+}
+
+async function doLogin(session){
+  currentUser=session;
+  setSession(session);
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('setup-overlay').style.display='none';
+
+  // Always fetch latest data from cloud on login
+  const fresh=await cloudLoad();
+  if(fresh){
+    meetings=fresh.meetings||meetings;
+    items=fresh.items||items;
+    team=fresh.team||team;
+    meetingTypes=fresh.meetingTypes||meetingTypes;
+    trashItems=fresh.trashItems||trashItems;
+    trashMeetings=fresh.trashMeetings||trashMeetings;
+    pins=fresh.pins||pins;
+    adminPw=fresh.adminPw||adminPw;
+    meetingAdmins=fresh.meetingAdmins||meetingAdmins;
+  }
+
+  // Re-evaluate role after fresh data — employee may have become meeting admin
+  if(session.role==='employee'||session.role==='meetingAdmin'){
+    const isMtgAdmin=!!(session.memberId&&meetingAdmins[session.memberId]&&meetingAdmins[session.memberId].length>0);
+    currentUser={...session,role:isMtgAdmin?'meetingAdmin':'employee'};
+    setSession(currentUser);
+  }
+
+  const ub=document.getElementById('topbar-user');
+  const roleLabel=currentUser.role==='admin'?'🔐 Super Admin':currentUser.role==='meetingAdmin'?'📋 '+currentUser.name+' (Meeting Admin)':'👤 '+currentUser.name;
+  ub.textContent=roleLabel;
+  ub.style.display='inline';
+  applyAccessControl();
+
+  // Activate dashboard
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-dashboard').classList.add('active');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.tab[onclick="showTab(\'dashboard\')"]')?.classList.add('active');
+  renderDashboard();updateReminderBadge();updateTrashBadge();
+}
+
+function doLogout(){
+  clearSession();currentUser=null;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-dashboard').classList.add('active');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.tab[onclick="showTab(\'dashboard\')"]')?.classList.add('active');
+  document.getElementById('topbar-user').style.display='none';
+  document.getElementById('setup-overlay').style.display='none';
+  document.getElementById('login-overlay').style.display='flex';
+  showLoginStep('role');
+}
+
+function applyAccessControl(){
+  const sa=isSuperAdmin();
+  const ma=isMeetingAdmin();
+  // Super admin sees everything; meeting admin sees add-meeting, analytics, action-items, reminders, ai-tools
+  // Employee sees only dashboard, action-items, reminders, ai-tools
+  const tabRules={
+    'add-meeting': true,        // everyone can create meetings
+    'analytics':   sa||ma,
+    'team':        sa,
+    'trash':       sa,
+    'settings':    sa,
+  };
+  document.querySelectorAll('.tab').forEach(btn=>{
+    const m=(btn.getAttribute('onclick')||'').match(/showTab\('([^']+)'\)/);
+    if(m&&tabRules.hasOwnProperty(m[1])){
+      btn.style.display=tabRules[m[1]]?'':'none';
+    }
+  });
+  const expBtn=document.getElementById('export-csv-btn');
+  if(expBtn)expBtn.style.display=sa?'':'none';
+}
+
+// Meeting Admin management
+function renderMeetingAdminList(){
+  const el=document.getElementById('meeting-admin-list');
+  if(!el)return;
+  if(!team.length){el.innerHTML='<div class="no-data">No team members yet. Add them in the Team tab first.</div>';return;}
+
+  el.innerHTML=team.map(t=>{
+    const assigned=meetingAdmins[t.id]||[];
+    const assignedNames=assigned.map(tid=>{
+      const mt=meetingTypes.find(x=>x.id===tid);
+      return mt?mt.name:null;
+    }).filter(Boolean);
+    return`<div style="padding:12px 0;border-bottom:1px solid #f0f0ee">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${assigned.length?'8px':'0'}">
+        <div style="width:32px;height:32px;border-radius:50%;background:${avatarColor(t.name)}20;color:${avatarColor(t.name)};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0">${initials(t.name)}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${t.name}</div>
+          <div style="font-size:11px;color:${assigned.length?'#0c447c':'#aaa'}">${assigned.length?'Meeting Admin — '+assignedNames.join(', '):'Employee'}</div>
+        </div>
+        <select id="ma-sel-${t.id}" style="font-size:12px;flex:1;max-width:200px">
+          <option value="">Assign a meeting category...</option>
+          ${meetingTypes.filter(mt=>!assigned.includes(mt.id)).map(mt=>`<option value="${mt.id}">${mt.name}</option>`).join('')}
+        </select>
+        <button class="sm primary" onclick="saveMeetingAdmin('${t.id}')">Assign</button>
+      </div>
+      ${assigned.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;padding-left:42px">
+        ${assigned.map(tid=>{
+          const mt=meetingTypes.find(x=>x.id===tid);
+          if(!mt)return'';
+          return`<span style="font-size:11px;background:#e6f1fb;color:#0c447c;padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">
+            ${mt.name}
+            <button onclick="removeMeetingAdmin('${t.id}','${tid}')" style="background:none;border:none;cursor:pointer;color:#a32d2d;font-size:12px;padding:0;line-height:1">✕</button>
+          </span>`;
+        }).join('')}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function saveMeetingAdmin(memberId){
+  const sel=document.getElementById('ma-sel-'+memberId);
+  const typeId=sel?sel.value:'';
+  if(!typeId){alert('Please select a meeting category to assign.');return;}
+  const ma={...meetingAdmins};
+  if(!ma[memberId])ma[memberId]=[];
+  if(!ma[memberId].includes(typeId))ma[memberId].push(typeId);
+  ss('meetingAdmins',ma);
+  renderMeetingAdminList();
+}
+
+function removeMeetingAdmin(memberId,typeId){
+  const ma={...meetingAdmins};
+  if(ma[memberId])ma[memberId]=ma[memberId].filter(id=>id!==typeId);
+  if(ma[memberId]&&ma[memberId].length===0)delete ma[memberId];
+  ss('meetingAdmins',ma);
+  renderMeetingAdminList();
+}
+
+// PIN management
+function renderPinList(){
+  const el=document.getElementById('pin-list');if(!el)return;
+  const p=getPins();
+  if(!team.length){el.innerHTML='<div class="no-data">No team members yet. Add them in the Team tab first.</div>';return;}
+  el.innerHTML=team.map(t=>{
+    const has=!!p[t.id];
+    const isMtgAdm=meetingAdmins[t.id]&&meetingAdmins[t.id].length>0;
+    const roleBadge=isMtgAdm
+      ?`<span style="font-size:10px;background:#e6f1fb;color:#0c447c;padding:2px 8px;border-radius:20px;font-weight:600">Meeting Admin</span>`
+      :`<span style="font-size:10px;background:#f5f5f3;color:#888;padding:2px 8px;border-radius:20px">Employee</span>`;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0ee">
+      <div style="width:32px;height:32px;border-radius:50%;background:${avatarColor(t.name)}20;color:${avatarColor(t.name)};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px;flex-shrink:0">${initials(t.name)}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px"><div style="font-weight:600;font-size:13px">${t.name}</div>${roleBadge}</div>
+        <div style="font-size:11px;color:${has?'#3b6d11':'#aaa'};margin-top:2px">${has?'✓ PIN set — can log in':'No PIN — cannot log in'}</div>
+      </div>
+      <input type="password" id="pin-input-${t.id}" placeholder="${has?'Change PIN':'Set PIN (min 4 chars)'}" style="width:140px;font-size:12px" onkeydown="if(event.key==='Enter')savePin('${t.id}')"/>
+      <button class="sm primary" onclick="savePin('${t.id}')">Save</button>
+      ${has?`<button class="sm danger" onclick="clearPin('${t.id}')">Clear</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function savePin(memberId){
+  const input=document.getElementById('pin-input-'+memberId);
+  const pin=(input.value||'').trim();
+  if(pin.length<4){alert('PIN must be at least 4 characters.');return;}
+  const p=getPins();p[memberId]=simpleHash(pin);
+  ss('pins',p);
+  input.value='';renderPinList();
+  alert('PIN saved for '+(team.find(t=>t.id===memberId)?.name||'member')+'.');
+}
+
+function clearPin(memberId){
+  if(!confirm('Remove this PIN? The employee will no longer be able to log in.'))return;
+  const p=getPins();delete p[memberId];
+  ss('pins',p);renderPinList();
+}
+
+function changeAdminPassword(){
+  const cur=document.getElementById('admin-pw-cur').value;
+  const nw=document.getElementById('admin-pw-new').value;
+  const msg=document.getElementById('admin-pw-msg');
+  if(simpleHash(cur)!==getAdminPw()){msg.textContent='Current password is incorrect.';msg.style.color='#c0392b';msg.style.display='block';return;}
+  if(!nw||nw.length<6){msg.textContent='New password must be at least 6 characters.';msg.style.color='#c0392b';msg.style.display='block';return;}
+  ss('adminPw',simpleHash(nw));
+  document.getElementById('admin-pw-cur').value='';document.getElementById('admin-pw-new').value='';
+  msg.textContent='Password updated successfully.';msg.style.color='#3b6d11';msg.style.display='block';
+  setTimeout(()=>msg.style.display='none',3000);
+}
+
+// Boot: restore session or show login
+(function bootAuth(){
+  const saved=getSession();
+  if(saved&&saved.role){
+    if(saved.role==='employee'&&!team.find(t=>t.id===saved.memberId)){clearSession();}
+    else{doLogin(saved);return;}
+  }
+  document.getElementById('login-overlay').style.display='flex';
+  showLoginStep('role');
+})();
+</script>
+</body>
+</html>
